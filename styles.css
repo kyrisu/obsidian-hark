@@ -1,4 +1,14 @@
-.tts-word {
+.tts-sentence {
+	background-color: var(--text-highlight-bg);
+	opacity: 0.4;
+	border-radius: 2px;
+	padding: 0 1px;
+	transition: opacity 120ms ease-out;
+}
+
+.tts-word-cursor {
 	background-color: var(--text-highlight-bg);
 	border-radius: 2px;
+	padding: 0 1px;
+	transition: background-color 80ms ease-out;
 }

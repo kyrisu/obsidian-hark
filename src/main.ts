@@ -6,6 +6,11 @@ import { stripMarkdown } from "./editor/markdownStripper";
 import { parseParagraphs } from "./editor/paragraphParser";
 import { splitSentences } from "./editor/sentenceSplitter";
 import { paragraphsFromSelection } from "./editor/selectionReader";
+import {
+	activeEditorView,
+	applyHighlight,
+	ttsHighlightField,
+} from "./editor/highlightExtension";
 import { Cache } from "./tts/Cache";
 import { Synthesizer } from "./tts/Synthesizer";
 
@@ -20,6 +25,7 @@ export default class ReadAloudPlugin extends Plugin {
 		this.cache = new Cache(this.app.vault.adapter, this.settings.cacheMaxBytes);
 		await this.cache.init();
 		this.synthesizer = new Synthesizer(this.cache, () => this.resolveApiKey());
+		this.registerEditorExtension(ttsHighlightField);
 		this.addSettingTab(new ReadAloudSettingTab(this.app, this));
 
 		if (DEV) {
@@ -30,6 +36,7 @@ export default class ReadAloudPlugin extends Plugin {
 					paragraphParser: { parseParagraphs },
 					sentenceSplitter: { splitSentences },
 					selectionReader: { paragraphsFromSelection },
+					highlightExtension: { activeEditorView, applyHighlight },
 				},
 			};
 		}
