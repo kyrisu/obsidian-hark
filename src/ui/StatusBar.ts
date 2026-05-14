@@ -1,9 +1,43 @@
 export type StatusBarState = "idle" | "playing" | "paused" | "loading" | "error";
 
+const LABELS: Record<StatusBarState, string> = {
+	idle: "",
+	loading: "Loading audio…",
+	playing: "▶ Reading",
+	paused: "⏸ Paused",
+	error: "⚠ Read aloud error",
+};
+
 export class StatusBar {
-	constructor(private el: HTMLElement) {
-		void this.el;
+	private state: StatusBarState = "idle";
+
+	constructor(
+		private readonly el: HTMLElement,
+		private readonly onToggle: () => void,
+	) {
+		this.el.addClass("tts-status-bar");
+		this.el.setAttribute("role", "status");
+		this.el.setAttribute("aria-live", "polite");
+		this.el.addEventListener("click", this.handleClick);
+		this.render();
 	}
 
-	setState(_state: StatusBarState): void {}
+	setState(next: StatusBarState): void {
+		if (this.state === next) return;
+		this.state = next;
+		this.render();
+	}
+
+	dispose(): void {
+		this.el.removeEventListener("click", this.handleClick);
+	}
+
+	private handleClick = (): void => {
+		if (this.state === "playing" || this.state === "paused") this.onToggle();
+	};
+
+	private render(): void {
+		this.el.setText(LABELS[this.state]);
+		this.el.toggleClass("tts-status-bar--hidden", this.state === "idle");
+	}
 }

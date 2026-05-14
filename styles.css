@@ -11,3 +11,93 @@
 	padding: 0 1px;
 	transition: background-color 80ms ease-out;
 }
+
+.tts-floating-player {
+	position: fixed;
+	z-index: var(--layer-popover);
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 8px 12px;
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	box-shadow: var(--shadow-s);
+	user-select: none;
+	font-size: var(--font-ui-small);
+}
+
+.tts-floating-player[data-state="idle"] {
+	display: none;
+}
+
+.tts-floating-player__drag {
+	cursor: grab;
+	padding: 0 6px;
+	opacity: 0.5;
+}
+
+.tts-floating-player__drag.is-dragging {
+	cursor: grabbing;
+}
+
+.tts-floating-player__btn {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--text-normal);
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: var(--font-ui-medium);
+	line-height: 1;
+}
+
+.tts-floating-player__btn:hover {
+	background: var(--background-modifier-hover);
+}
+
+.tts-floating-player__paragraph {
+	opacity: 0.7;
+	font-variant-numeric: tabular-nums;
+	min-width: 3.5em;
+	text-align: center;
+}
+
+.tts-floating-player__time {
+	opacity: 0.7;
+	font-variant-numeric: tabular-nums;
+}
+
+.tts-floating-player__speed {
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 2px 4px;
+	font-size: var(--font-ui-small);
+}
+
+.tts-floating-player__progress {
+	width: 120px;
+	height: 4px;
+	background: var(--background-modifier-border);
+	border-radius: 2px;
+	cursor: pointer;
+	overflow: hidden;
+}
+
+.tts-floating-player__progress-fill {
+	height: 100%;
+	background: var(--interactive-accent);
+	border-radius: 2px;
+	transition: width 80ms linear;
+}
+
+.tts-status-bar {
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+}
+
+.tts-status-bar--hidden {
+	display: none;
+}
