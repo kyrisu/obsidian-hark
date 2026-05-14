@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { binPackSentences, distributeSentenceTimings } from "./Synthesizer";
 import type { Sentence } from "../editor/sentenceSplitter";
+import type { Paragraph } from "../types";
 
 function sentence(partial: Partial<Sentence> & { text: string }): Sentence {
 	return {
@@ -11,6 +12,20 @@ function sentence(partial: Partial<Sentence> & { text: string }): Sentence {
 		text: partial.text,
 		byteLength: partial.byteLength ?? new TextEncoder().encode(partial.text).byteLength,
 		words: partial.words ?? [],
+	};
+}
+
+function identityParagraph(text: string): Paragraph {
+	const map = new Uint32Array(text.length);
+	for (let i = 0; i < text.length; i++) map[i] = i;
+	return {
+		index: 0,
+		sourceStart: 0,
+		sourceEnd: text.length,
+		sourceText: text,
+		strippedText: text,
+		strippedToSource: map,
+		byteLength: new TextEncoder().encode(text).byteLength,
 	};
 }
 
@@ -60,7 +75,7 @@ describe("binPackSentences", () => {
 			sentence({ text: "BBBB" }),
 			sentence({ text: "CCCC" }),
 		];
-		const groups = binPackSentences(sentences, 9);
+		const groups = binPackSentences(sentences, identityParagraph("AAAA BBBB CCCC"), 9);
 		expect(groups).toHaveLength(2);
 		expect(groups[0]!.map((s) => s.text)).toEqual(["AAAA", "BBBB"]);
 		expect(groups[1]!.map((s) => s.text)).toEqual(["CCCC"]);
@@ -68,12 +83,15 @@ describe("binPackSentences", () => {
 
 	it("splits a single oversize sentence into mid-sentence pieces at whitespace and fires the notice once", () => {
 		let notices = 0;
+		const text = "alpha beta gamma delta epsilon zeta";
 		const long = sentence({
-			text: "alpha beta gamma delta epsilon zeta",
+			text,
 			sourceStart: 0,
-			sourceEnd: 35,
+			sourceEnd: text.length,
+			strippedStart: 0,
+			strippedEnd: text.length,
 		});
-		const groups = binPackSentences([long], 10, () => notices++);
+		const groups = binPackSentences([long], identityParagraph(text), 10, () => notices++);
 		expect(notices).toBe(1);
 		expect(groups.length).toBeGreaterThan(1);
 		const totalBytes = groups.reduce(
@@ -87,7 +105,52 @@ describe("binPackSentences", () => {
 		}
 	});
 
+	it("uses paragraph.strippedToSource for piece offsets so markdown-stripped sentences map to correct source positions", () => {
+		// Source: "**alpha beta** gamma delta epsilon zeta" (39 chars)
+		// Stripped (markdown removed): "alpha beta gamma delta epsilon zeta" (35 chars)
+		const strippedText = "alpha beta gamma delta epsilon zeta";
+		const strippedToSource = new Uint32Array([
+			2, 3, 4, 5, 6,
+			7,
+			8, 9, 10, 11,
+			14,
+			15, 16, 17, 18, 19,
+			20,
+			21, 22, 23, 24, 25,
+			26,
+			27, 28, 29, 30, 31, 32, 33,
+			34,
+			35, 36, 37, 38,
+		]);
+		const paragraph: Paragraph = {
+			index: 0,
+			sourceStart: 0,
+			sourceEnd: 39,
+			sourceText: "**alpha beta** gamma delta epsilon zeta",
+			strippedText,
+			strippedToSource,
+			byteLength: strippedText.length,
+		};
+		const long = sentence({
+			text: strippedText,
+			strippedStart: 0,
+			strippedEnd: strippedText.length,
+			sourceStart: strippedToSource[0]!,
+			sourceEnd: strippedToSource[strippedToSource.length - 1]! + 1,
+		});
+		const groups = binPackSentences([long], paragraph, 10);
+		expect(groups.length).toBeGreaterThan(0);
+		const first = groups[0]![0]!;
+		expect(first.text).toBe("alpha ");
+		expect(first.sourceStart).toBe(2);
+		expect(first.sourceEnd).toBe(8);
+
+		const second = groups[1]![0]!;
+		expect(second.text.startsWith("beta")).toBe(true);
+		expect(second.sourceStart).toBe(8);
+	});
+
 	it("handles an empty input", () => {
-		expect(binPackSentences([], 100)).toEqual([]);
+		expect(binPackSentences([], identityParagraph(""), 100)).toEqual([]);
 	});
 });

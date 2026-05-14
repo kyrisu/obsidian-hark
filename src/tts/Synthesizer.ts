@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import type { Paragraph, SentenceTiming, SynthResult } from "../types";
+import type { Paragraph, SentenceTiming, SourceWord, SynthResult } from "../types";
 import { splitSentences, type Sentence } from "../editor/sentenceSplitter";
 import { cacheKey, sha256Hex } from "./Hash";
 import {
@@ -55,7 +55,7 @@ export class Synthesizer {
 		signal?: AbortSignal,
 	): Promise<SynthResult[]> {
 		const sentences = splitSentences(paragraph);
-		const groups = binPackSentences(sentences, MAX_SUB_CHUNK_BYTES, () =>
+		const groups = binPackSentences(sentences, paragraph, MAX_SUB_CHUNK_BYTES, () =>
 			this.notifyOversizeOnce(paragraph.index),
 		);
 		const results: SynthResult[] = [];
@@ -148,6 +148,7 @@ export function distributeSentenceTimings(
 
 export function binPackSentences(
 	sentences: Sentence[],
+	paragraph: Paragraph,
 	maxBytes: number,
 	onMidSentenceSplit?: () => void,
 ): Sentence[][] {
@@ -167,7 +168,7 @@ export function binPackSentences(
 		if (sentence.byteLength > maxBytes) {
 			flush();
 			onMidSentenceSplit?.();
-			for (const piece of splitOversizeSentence(sentence, maxBytes)) {
+			for (const piece of splitOversizeSentence(sentence, paragraph, maxBytes)) {
 				groups.push([piece]);
 			}
 			continue;
@@ -180,7 +181,11 @@ export function binPackSentences(
 	return groups;
 }
 
-function splitOversizeSentence(sentence: Sentence, maxBytes: number): Sentence[] {
+function splitOversizeSentence(
+	sentence: Sentence,
+	paragraph: Paragraph,
+	maxBytes: number,
+): Sentence[] {
 	const text = sentence.text;
 	const encoder = new TextEncoder();
 	const pieces: Sentence[] = [];
@@ -201,17 +206,20 @@ function splitOversizeSentence(sentence: Sentence, maxBytes: number): Sentence[]
 			if (split > pieceStart) end = split;
 		}
 		const pieceText = text.slice(pieceStart, end);
-		const offsetWithinSentence = pieceStart;
-		const wordsInPiece = sentence.words.filter((w) => {
-			const wStart = w.sourceStart;
-			const wEnd = w.sourceEnd;
-			return wStart >= sentence.sourceStart + offsetWithinSentence && wEnd <= sentence.sourceStart + end;
-		});
+		const strippedStart = sentence.strippedStart + pieceStart;
+		const strippedEnd = sentence.strippedStart + end;
+		const sourceStart =
+			paragraph.strippedToSource[strippedStart] ?? sentence.sourceStart;
+		const sourceEnd =
+			(paragraph.strippedToSource[strippedEnd - 1] ?? sentence.sourceEnd - 1) + 1;
+		const wordsInPiece: SourceWord[] = sentence.words.filter(
+			(w) => w.sourceStart >= sourceStart && w.sourceEnd <= sourceEnd,
+		);
 		pieces.push({
-			strippedStart: sentence.strippedStart + pieceStart,
-			strippedEnd: sentence.strippedStart + end,
-			sourceStart: sentence.sourceStart + pieceStart,
-			sourceEnd: sentence.sourceStart + end,
+			strippedStart,
+			strippedEnd,
+			sourceStart,
+			sourceEnd,
 			text: pieceText,
 			byteLength: encoder.encode(pieceText).byteLength,
 			words: wordsInPiece,
