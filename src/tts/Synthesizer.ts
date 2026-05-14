@@ -11,7 +11,7 @@ import {
 } from "./GeminiTtsClient";
 import type { Cache } from "./Cache";
 
-const MAX_REQUEST_BYTES = 5000;
+export const MAX_REQUEST_BYTES = 5000;
 const MAX_SUB_CHUNK_BYTES = 4500;
 
 type SynthesizeFn = (req: GeminiTtsRequest) => Promise<ArrayBuffer>;
