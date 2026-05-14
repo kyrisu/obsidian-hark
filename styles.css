@@ -1,9 +1,8 @@
 .tts-sentence {
-	background-color: var(--text-highlight-bg);
-	opacity: 0.4;
+	background-color: color-mix(in srgb, var(--text-highlight-bg) 40%, transparent);
 	border-radius: 2px;
 	padding: 0 1px;
-	transition: opacity 120ms ease-out;
+	transition: background-color 120ms ease-out;
 }
 
 .tts-word-cursor {
