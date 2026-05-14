@@ -6,12 +6,20 @@ import { stripMarkdown } from "./editor/markdownStripper";
 import { parseParagraphs } from "./editor/paragraphParser";
 import { splitSentences } from "./editor/sentenceSplitter";
 import { paragraphsFromSelection } from "./editor/selectionReader";
+import { Cache } from "./tts/Cache";
+import { Synthesizer } from "./tts/Synthesizer";
 
 export default class ReadAloudPlugin extends Plugin {
 	settings!: PluginSettings;
+	cache!: Cache;
+	synthesizer!: Synthesizer;
+	__devKey?: string;
 
 	async onload() {
 		await this.loadSettings();
+		this.cache = new Cache(this.app.vault.adapter, this.settings.cacheMaxBytes);
+		await this.cache.init();
+		this.synthesizer = new Synthesizer(this.cache, () => this.resolveApiKey());
 		this.addSettingTab(new ReadAloudSettingTab(this.app, this));
 
 		if (DEV) {
@@ -40,4 +48,9 @@ export default class ReadAloudPlugin extends Plugin {
 	}
 
 	onunload() {}
+
+	private async resolveApiKey(): Promise<string> {
+		if (this.__devKey) return this.__devKey;
+		return "";
+	}
 }
