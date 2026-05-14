@@ -118,6 +118,10 @@ export class PlaybackQueue {
 		return this.cursor ? { ...this.cursor } : null;
 	}
 
+	get paragraphCount(): number {
+		return this.paragraphs.length;
+	}
+
 	private async playCurrent(): Promise<void> {
 		if (!this.cursor) return;
 		const { paragraphIdx, subChunkIdx } = this.cursor;

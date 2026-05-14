@@ -1,6 +1,6 @@
-export type StatusBarState = "idle" | "playing" | "paused" | "loading" | "error";
+import type { PlaybackUiState } from "../types";
 
-const LABELS: Record<StatusBarState, string> = {
+const LABELS: Record<PlaybackUiState, string> = {
 	idle: "",
 	loading: "Loading audio…",
 	playing: "▶ Reading",
@@ -9,7 +9,7 @@ const LABELS: Record<StatusBarState, string> = {
 };
 
 export class StatusBar {
-	private state: StatusBarState = "idle";
+	private state: PlaybackUiState = "idle";
 
 	constructor(
 		private readonly el: HTMLElement,
@@ -22,7 +22,7 @@ export class StatusBar {
 		this.render();
 	}
 
-	setState(next: StatusBarState): void {
+	setState(next: PlaybackUiState): void {
 		if (this.state === next) return;
 		this.state = next;
 		this.render();

@@ -1,9 +1,9 @@
 import type { SentenceTiming } from "../types";
 import type { TtsHighlightState } from "../editor/highlightExtension";
+import { MAX_RATE, MIN_RATE } from "../playback/rate";
+import { clamp } from "../utils/math";
 
 const SENTENCE_EDGE_TOLERANCE = 0.05;
-const MIN_RATE = 0.5;
-const MAX_RATE = 2.0;
 
 export type PlayerState = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
 
@@ -103,7 +103,7 @@ export class Player {
 	}
 
 	setRate(rate: number): void {
-		const clamped = Math.max(MIN_RATE, Math.min(MAX_RATE, rate));
+		const clamped = clamp(rate, MIN_RATE, MAX_RATE);
 		const el = this.audio;
 		if (!el) return;
 		el.playbackRate = clamped;

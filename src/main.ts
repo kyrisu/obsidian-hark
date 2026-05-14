@@ -1,5 +1,5 @@
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
-import { DEFAULT_SETTINGS, Paragraph, PluginSettings } from "./types";
+import { DEFAULT_SETTINGS, Paragraph, PlaybackUiState, PluginSettings } from "./types";
 import { ReadAloudSettingTab } from "./settings";
 import { cacheKey, sha256Hex } from "./tts/Hash";
 import { stripMarkdown } from "./editor/markdownStripper";
@@ -16,13 +16,11 @@ import { Cache } from "./tts/Cache";
 import { Synthesizer } from "./tts/Synthesizer";
 import { Player } from "./playback/Player";
 import { PlaybackQueue, QueueState } from "./playback/PlaybackQueue";
+import { MAX_RATE, MIN_RATE, SPEED_OPTIONS } from "./playback/rate";
 import { registerCommands } from "./commands";
-import { StatusBar, StatusBarState } from "./ui/StatusBar";
-import { FloatingPlayer, FloatingPlayerState } from "./ui/FloatingPlayer";
-
-const MIN_RATE = 0.5;
-const MAX_RATE = 2.0;
-const SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
+import { StatusBar } from "./ui/StatusBar";
+import { FloatingPlayer } from "./ui/FloatingPlayer";
+import { clamp } from "./utils/math";
 
 export default class ReadAloudPlugin extends Plugin {
 	settings!: PluginSettings;
@@ -34,7 +32,6 @@ export default class ReadAloudPlugin extends Plugin {
 
 	private statusBar: StatusBar | null = null;
 	private floatingPlayer: FloatingPlayer | null = null;
-	private activeTotalParagraphs = 0;
 
 	async onload() {
 		await this.loadSettings();
@@ -150,23 +147,13 @@ export default class ReadAloudPlugin extends Plugin {
 	}
 
 	async startPlaybackFromCursor(editor: Editor): Promise<void> {
-		const paragraphs = parseParagraphs(editor.getValue());
-		if (paragraphs.length === 0) {
-			new Notice("Note has no readable paragraphs.");
-			return;
-		}
-		const cursorOffset = editor.posToOffset(editor.getCursor());
-		const startIdx = findParagraphAtOffset(paragraphs, cursorOffset);
-		await this.startPlayback(paragraphs, startIdx);
+		await this.startFromFullDoc(editor, (paragraphs) =>
+			findParagraphAtOffset(paragraphs, editor.posToOffset(editor.getCursor())),
+		);
 	}
 
 	async startPlaybackFromTop(editor: Editor): Promise<void> {
-		const paragraphs = parseParagraphs(editor.getValue());
-		if (paragraphs.length === 0) {
-			new Notice("Note has no readable paragraphs.");
-			return;
-		}
-		await this.startPlayback(paragraphs, 0);
+		await this.startFromFullDoc(editor, () => 0);
 	}
 
 	async startPlaybackFromSelection(editor: Editor): Promise<void> {
@@ -180,8 +167,7 @@ export default class ReadAloudPlugin extends Plugin {
 	}
 
 	bumpRate(delta: number): void {
-		const next = clamp(this.settings.playbackRate + delta, MIN_RATE, MAX_RATE);
-		void this.applyRate(next);
+		void this.applyRate(this.settings.playbackRate + delta);
 	}
 
 	private async applyRate(rate: number): Promise<void> {
@@ -192,6 +178,18 @@ export default class ReadAloudPlugin extends Plugin {
 		await this.saveSettings();
 	}
 
+	private async startFromFullDoc(
+		editor: Editor,
+		pickStart: (paragraphs: Paragraph[]) => number,
+	): Promise<void> {
+		const paragraphs = parseParagraphs(editor.getValue());
+		if (paragraphs.length === 0) {
+			new Notice("Note has no readable paragraphs.");
+			return;
+		}
+		await this.startPlayback(paragraphs, pickStart(paragraphs));
+	}
+
 	private async startPlayback(paragraphs: Paragraph[], startIdx: number): Promise<void> {
 		const voiceId = this.settings.voiceId;
 		if (!voiceId) {
@@ -199,7 +197,6 @@ export default class ReadAloudPlugin extends Plugin {
 			return;
 		}
 		this.playbackQueue?.stop();
-		this.activeTotalParagraphs = paragraphs.length;
 		this.floatingPlayer?.setParagraphIndex(startIdx, paragraphs.length);
 		this.floatingPlayer?.setRate(this.settings.playbackRate);
 		this.playbackQueue = new PlaybackQueue(paragraphs, voiceId, this.synthesizer, this.player, {
@@ -207,7 +204,10 @@ export default class ReadAloudPlugin extends Plugin {
 			autoAdvance: this.settings.autoAdvance,
 			onStateChange: (state) => this.handleQueueState(state),
 			onPositionChange: (paragraphIdx) => {
-				this.floatingPlayer?.setParagraphIndex(paragraphIdx, this.activeTotalParagraphs);
+				const count = this.playbackQueue?.paragraphCount ?? 0;
+				this.floatingPlayer?.setParagraphIndex(paragraphIdx, count);
+				// Re-apply rate after each track load: el.src reassignment may reset playbackRate
+				// in some browsers, so the explicit re-application keeps bumpRate / dropdown changes sticky.
 				this.player.setRate(this.settings.playbackRate);
 			},
 			onError: (err) => {
@@ -224,7 +224,7 @@ export default class ReadAloudPlugin extends Plugin {
 	private handleQueueState(state: QueueState): void {
 		const ui = queueStateToUi(state);
 		this.statusBar?.setState(ui);
-		this.floatingPlayer?.setState(uiToFloating(ui));
+		this.floatingPlayer?.setState(ui);
 	}
 
 	private async resolveApiKey(): Promise<string> {
@@ -244,27 +244,7 @@ function findParagraphAtOffset(
 	return Math.max(0, paragraphs.length - 1);
 }
 
-function queueStateToUi(state: QueueState): StatusBarState {
-	switch (state) {
-		case "playing":
-			return "playing";
-		case "paused":
-			return "paused";
-		case "loading":
-			return "loading";
-		case "error":
-			return "error";
-		case "idle":
-		case "ended":
-		default:
-			return "idle";
-	}
-}
-
-function uiToFloating(state: StatusBarState): FloatingPlayerState {
+function queueStateToUi(state: QueueState): PlaybackUiState {
+	if (state === "ended") return "idle";
 	return state;
-}
-
-function clamp(value: number, lo: number, hi: number): number {
-	return Math.max(lo, Math.min(hi, value));
 }

@@ -1,8 +1,9 @@
-export type FloatingPlayerState = "idle" | "loading" | "playing" | "paused" | "error";
+import type { PlaybackUiState } from "../types";
+import { clamp } from "../utils/math";
 
 export interface FloatingPlayerOptions {
 	initialPosition: { x: number; y: number } | null;
-	speeds: number[];
+	speeds: readonly number[];
 	initialRate: number;
 	onPlayPause: () => void;
 	onStop: () => void;
@@ -22,48 +23,53 @@ export class FloatingPlayer {
 	private readonly root: HTMLElement;
 	private readonly handle: HTMLElement;
 	private readonly playPauseBtn: HTMLButtonElement;
-	private readonly stopBtn: HTMLButtonElement;
-	private readonly prevBtn: HTMLButtonElement;
-	private readonly nextBtn: HTMLButtonElement;
 	private readonly paraIndicator: HTMLElement;
 	private readonly progressTrack: HTMLElement;
 	private readonly progressFill: HTMLElement;
 	private readonly timeLabel: HTMLElement;
 	private readonly speedSelect: HTMLSelectElement;
-	private state: FloatingPlayerState = "idle";
+	private state: PlaybackUiState = "idle";
 	private tickHandle: number | null = null;
-	private drag: { offsetX: number; offsetY: number } | null = null;
+	private drag: { offsetX: number; offsetY: number; width: number; height: number } | null = null;
+	private lastProgressWidth = -1;
+	private lastTimeLabel = "";
 
 	constructor(private readonly options: FloatingPlayerOptions) {
 		this.root = document.createElement("div");
-		this.root.className = "tts-floating-player";
+		this.root.addClass("tts-floating-player");
 		this.root.setAttribute("data-state", "idle");
 
-		this.handle = el("div", "tts-floating-player__drag", "⠿");
-		this.handle.title = "Drag to move";
+		this.handle = this.root.createEl("div", {
+			cls: "tts-floating-player__drag",
+			text: "⠿",
+			attr: { title: "Drag to move" },
+		});
 		this.handle.addEventListener("mousedown", this.handleDragStart);
 
-		this.prevBtn = button("⏮", "Previous paragraph", () => this.options.onSkipPrevious());
-		this.playPauseBtn = button("▶", "Play / pause", () => this.options.onPlayPause());
-		this.nextBtn = button("⏭", "Next paragraph", () => this.options.onSkipNext());
-		this.stopBtn = button("⏹", "Stop", () => this.options.onStop());
+		this.makeButton("⏮", "Previous paragraph", () => this.options.onSkipPrevious());
+		this.playPauseBtn = this.makeButton("▶", "Play / pause", () => this.options.onPlayPause());
+		this.makeButton("⏭", "Next paragraph", () => this.options.onSkipNext());
+		this.makeButton("⏹", "Stop", () => this.options.onStop());
 
-		this.paraIndicator = el("span", "tts-floating-player__paragraph", "—");
+		this.paraIndicator = this.root.createEl("span", {
+			cls: "tts-floating-player__paragraph",
+			text: "—",
+		});
 
-		this.progressTrack = el("div", "tts-floating-player__progress");
-		this.progressFill = el("div", "tts-floating-player__progress-fill");
-		this.progressTrack.appendChild(this.progressFill);
+		this.progressTrack = this.root.createEl("div", { cls: "tts-floating-player__progress" });
+		this.progressFill = this.progressTrack.createEl("div", {
+			cls: "tts-floating-player__progress-fill",
+		});
 		this.progressTrack.addEventListener("click", this.handleSeekClick);
 
-		this.timeLabel = el("span", "tts-floating-player__time", "00:00 / 00:00");
+		this.timeLabel = this.root.createEl("span", {
+			cls: "tts-floating-player__time",
+			text: "00:00 / 00:00",
+		});
 
-		this.speedSelect = document.createElement("select");
-		this.speedSelect.className = "tts-floating-player__speed";
+		this.speedSelect = this.root.createEl("select", { cls: "tts-floating-player__speed" });
 		for (const s of options.speeds) {
-			const opt = document.createElement("option");
-			opt.value = String(s);
-			opt.text = `${s}×`;
-			this.speedSelect.appendChild(opt);
+			this.speedSelect.createEl("option", { value: String(s), text: `${s}×` });
 		}
 		this.speedSelect.value = nearestSpeed(options.speeds, options.initialRate);
 		this.speedSelect.addEventListener("change", () => {
@@ -71,23 +77,11 @@ export class FloatingPlayer {
 			if (Number.isFinite(rate)) this.options.onSpeedChange(rate);
 		});
 
-		this.root.append(
-			this.handle,
-			this.prevBtn,
-			this.playPauseBtn,
-			this.nextBtn,
-			this.stopBtn,
-			this.paraIndicator,
-			this.progressTrack,
-			this.timeLabel,
-			this.speedSelect,
-		);
-
 		document.body.appendChild(this.root);
 		this.applyInitialPosition(options.initialPosition);
 	}
 
-	setState(next: FloatingPlayerState): void {
+	setState(next: PlaybackUiState): void {
 		if (this.state === next) return;
 		this.state = next;
 		this.root.setAttribute("data-state", next);
@@ -98,8 +92,7 @@ export class FloatingPlayer {
 	}
 
 	setParagraphIndex(idx: number, total: number): void {
-		if (total <= 0) this.paraIndicator.textContent = "—";
-		else this.paraIndicator.textContent = `${idx + 1} / ${total}`;
+		this.paraIndicator.textContent = total <= 0 ? "—" : `${idx + 1} / ${total}`;
 	}
 
 	setRate(rate: number): void {
@@ -113,6 +106,16 @@ export class FloatingPlayer {
 		document.removeEventListener("mousemove", this.handleDragMove);
 		document.removeEventListener("mouseup", this.handleDragEnd);
 		this.root.remove();
+	}
+
+	private makeButton(label: string, title: string, onClick: () => void): HTMLButtonElement {
+		const btn = this.root.createEl("button", {
+			cls: "tts-floating-player__btn",
+			text: label,
+			attr: { title, "aria-label": title },
+		});
+		btn.addEventListener("click", onClick);
+		return btn;
 	}
 
 	private applyInitialPosition(pos: { x: number; y: number } | null): void {
@@ -143,6 +146,8 @@ export class FloatingPlayer {
 		this.drag = {
 			offsetX: event.clientX - rect.left,
 			offsetY: event.clientY - rect.top,
+			width: rect.width,
+			height: rect.height,
 		};
 		this.handle.addClass("is-dragging");
 		document.addEventListener("mousemove", this.handleDragMove);
@@ -150,10 +155,10 @@ export class FloatingPlayer {
 	};
 
 	private handleDragMove = (event: MouseEvent): void => {
-		if (!this.drag) return;
-		const rect = this.root.getBoundingClientRect();
-		const x = clamp(event.clientX - this.drag.offsetX, MARGIN, window.innerWidth - rect.width - MARGIN);
-		const y = clamp(event.clientY - this.drag.offsetY, MARGIN, window.innerHeight - rect.height - MARGIN);
+		const d = this.drag;
+		if (!d) return;
+		const x = clamp(event.clientX - d.offsetX, MARGIN, window.innerWidth - d.width - MARGIN);
+		const y = clamp(event.clientY - d.offsetY, MARGIN, window.innerHeight - d.height - MARGIN);
 		this.root.style.left = `${x}px`;
 		this.root.style.top = `${y}px`;
 	};
@@ -194,31 +199,17 @@ export class FloatingPlayer {
 
 	private updateProgress(elapsed: number, duration: number): void {
 		const fraction = duration > 0 ? clamp(elapsed / duration, 0, 1) : 0;
-		this.progressFill.style.width = `${fraction * 100}%`;
-		this.timeLabel.textContent = `${formatTime(elapsed)} / ${formatTime(duration)}`;
+		const widthPct = Math.round(fraction * 1000) / 10;
+		if (widthPct !== this.lastProgressWidth) {
+			this.lastProgressWidth = widthPct;
+			this.progressFill.style.width = `${widthPct}%`;
+		}
+		const label = `${formatTime(elapsed)} / ${formatTime(duration)}`;
+		if (label !== this.lastTimeLabel) {
+			this.lastTimeLabel = label;
+			this.timeLabel.textContent = label;
+		}
 	}
-}
-
-function el(tag: string, className: string, text?: string): HTMLElement {
-	const node = document.createElement(tag);
-	node.className = className;
-	if (text !== undefined) node.textContent = text;
-	return node;
-}
-
-function button(label: string, title: string, onClick: () => void): HTMLButtonElement {
-	const btn = document.createElement("button");
-	btn.className = "tts-floating-player__btn";
-	btn.textContent = label;
-	btn.title = title;
-	btn.setAttribute("aria-label", title);
-	btn.addEventListener("click", onClick);
-	return btn;
-}
-
-function clamp(value: number, lo: number, hi: number): number {
-	if (hi < lo) return lo;
-	return Math.max(lo, Math.min(hi, value));
 }
 
 function formatTime(seconds: number): string {
@@ -233,7 +224,7 @@ function pad2(n: number): string {
 	return n < 10 ? `0${n}` : String(n);
 }
 
-function nearestSpeed(speeds: number[], rate: number): string {
+function nearestSpeed(speeds: readonly number[], rate: number): string {
 	let best = speeds[0] ?? 1;
 	let bestDist = Infinity;
 	for (const s of speeds) {

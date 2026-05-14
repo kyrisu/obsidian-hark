@@ -63,3 +63,5 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 };
 
 export const PLUGIN_LANGUAGE = "en-US";
+
+export type PlaybackUiState = "idle" | "loading" | "playing" | "paused" | "error";
