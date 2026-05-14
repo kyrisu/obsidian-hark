@@ -1,19 +1,21 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "tts-read-aloud",
+	"version": "0.1.0",
+	"description": "Read your notes aloud using Google Gemini-TTS with word-level highlighting.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"keywords": [],
 	"license": "0-BSD",
 	"devDependencies": {
-		"@types/node": "^16.11.6",
+		"@types/node": "^18.19.0",
 		"esbuild": "0.25.5",
 		"eslint-plugin-obsidianmd": "0.1.9",
 		"globals": "14.0.0",
@@ -21,7 +23,9 @@
 		"typescript": "^5.8.3",
 		"typescript-eslint": "8.35.1",
 		"@eslint/js": "9.30.1",
-		"jiti": "2.6.1"
+		"jiti": "2.6.1",
+		"vitest": "^2.1.9",
+		"@vitest/ui": "^2.1.9"
 	},
 	"dependencies": {
 		"obsidian": "latest"
