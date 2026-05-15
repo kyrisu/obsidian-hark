@@ -1,6 +1,6 @@
 import type { Paragraph, SynthResult } from "../types";
-import { MAX_REQUEST_BYTES, Synthesizer } from "../tts/Synthesizer";
-import { RequestAbortedError } from "../tts/GeminiTtsClient";
+import { Synthesizer } from "../tts/Synthesizer";
+import { MAX_REQUEST_BYTES, RequestAbortedError } from "../tts/GeminiTtsClient";
 import type { Player } from "./Player";
 
 export type QueueState = "idle" | "loading" | "playing" | "paused" | "ended" | "error";

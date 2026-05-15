@@ -4,37 +4,34 @@ import { splitSentences, type Sentence } from "../editor/sentenceSplitter";
 import { cacheKey, sha256Hex } from "./Hash";
 import {
 	GeminiTtsError,
+	MAX_REQUEST_BYTES,
 	RequestAbortedError,
 	RequestTooLargeError,
-	synthesizeMp3 as defaultSynthesizeMp3,
+	synthesizeSpeech as defaultSynthesizeSpeech,
 	type GeminiTtsRequest,
+	type SpeechResult,
 } from "./GeminiTtsClient";
 import type { Cache } from "./Cache";
 
-export const MAX_REQUEST_BYTES = 5000;
 const MAX_SUB_CHUNK_BYTES = 4500;
 
-type SynthesizeFn = (req: GeminiTtsRequest) => Promise<ArrayBuffer>;
-type DurationProbe = (audio: ArrayBuffer) => Promise<number>;
+type SynthesizeFn = (req: GeminiTtsRequest) => Promise<SpeechResult>;
 
 export interface SynthesizerOptions {
-	synthesizeMp3?: SynthesizeFn;
-	probeAudioDuration?: DurationProbe;
+	synthesizeSpeech?: SynthesizeFn;
 }
 
 export class Synthesizer {
 	private inFlight = new Map<string, Promise<SynthResult>>();
 	private oversizeNoticeShown = false;
-	private readonly synthesizeMp3: SynthesizeFn;
-	private readonly probeAudioDuration: DurationProbe;
+	private readonly synthesizeSpeech: SynthesizeFn;
 
 	constructor(
 		private cache: Cache,
 		private getGoogleKey: () => Promise<string>,
 		opts: SynthesizerOptions = {},
 	) {
-		this.synthesizeMp3 = opts.synthesizeMp3 ?? defaultSynthesizeMp3;
-		this.probeAudioDuration = opts.probeAudioDuration ?? probeMp3Duration;
+		this.synthesizeSpeech = opts.synthesizeSpeech ?? defaultSynthesizeSpeech;
 	}
 
 	async synthesize(
@@ -102,13 +99,12 @@ export class Synthesizer {
 		const apiKey = await this.getGoogleKey();
 		if (!apiKey) throw new GeminiTtsError("Google API key is not configured.");
 
-		const audio = await this.synthesizeMp3({ text, voiceId, apiKey, signal });
+		const { audio, durationSec } = await this.synthesizeSpeech({ text, voiceId, apiKey, signal });
 		if (signal?.aborted) throw new RequestAbortedError();
 
-		const audioDurationSec = await this.probeAudioDuration(audio);
-		const timings = distributeSentenceTimings(sentences, audioDurationSec);
+		const timings = distributeSentenceTimings(sentences, durationSec);
 
-		const result: SynthResult = { audio, audioDurationSec, sentences: timings };
+		const result: SynthResult = { audio, audioDurationSec: durationSec, sentences: timings };
 		await this.cache.put(hash, text.slice(0, 80), result);
 		return result;
 	}
@@ -228,43 +224,4 @@ function splitOversizeSentence(
 		while (pieceStart < text.length && /\s/.test(text.charAt(pieceStart))) pieceStart++;
 	}
 	return pieces;
-}
-
-async function probeMp3Duration(audio: ArrayBuffer): Promise<number> {
-	const w = globalThis as unknown as {
-		AudioContext?: typeof AudioContext;
-		webkitAudioContext?: typeof AudioContext;
-	};
-	const Ctor = w.AudioContext ?? w.webkitAudioContext;
-	if (Ctor) {
-		const ctx = new Ctor();
-		try {
-			const buffer = await ctx.decodeAudioData(audio.slice(0));
-			return buffer.duration;
-		} catch {
-			// fall through to HTMLAudioElement fallback
-		} finally {
-			await ctx.close().catch(() => undefined);
-		}
-	}
-	return probeWithAudioElement(audio);
-}
-
-function probeWithAudioElement(audio: ArrayBuffer): Promise<number> {
-	return new Promise((resolve, reject) => {
-		const url = URL.createObjectURL(new Blob([audio], { type: "audio/mpeg" }));
-		const el = new Audio();
-		const cleanup = () => URL.revokeObjectURL(url);
-		el.preload = "metadata";
-		el.onloadedmetadata = () => {
-			const d = el.duration;
-			cleanup();
-			resolve(d);
-		};
-		el.onerror = () => {
-			cleanup();
-			reject(new Error("Failed to probe MP3 duration via HTMLAudioElement."));
-		};
-		el.src = url;
-	});
 }

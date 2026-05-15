@@ -30,7 +30,7 @@ export class Player {
 		this.setState("loading");
 		this.sentences = sentences;
 		const el = this.ensureAudio();
-		const url = URL.createObjectURL(new Blob([audio], { type: "audio/mpeg" }));
+		const url = URL.createObjectURL(new Blob([audio], { type: "audio/wav" }));
 		this.currentUrl = url;
 		el.src = url;
 		await new Promise<void>((resolve, reject) => {

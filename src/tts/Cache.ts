@@ -180,8 +180,8 @@ export class Cache {
 		let totalBytes = 0;
 		for (const filePath of listing.files) {
 			const base = filePath.split("/").pop() ?? "";
-			if (!base.endsWith(".mp3")) continue;
-			const hash = base.slice(0, -".mp3".length);
+			if (!base.endsWith(".wav")) continue;
+			const hash = base.slice(0, -".wav".length);
 			const timingsPath = this.timingsPath(hash);
 			if (!(await this.adapter.exists(timingsPath))) continue;
 			const stat = await this.adapter.stat(filePath);
@@ -234,7 +234,7 @@ export class Cache {
 	}
 
 	private audioPath(hash: string): string {
-		return `${CACHE_DIR}/${hash}.mp3`;
+		return `${CACHE_DIR}/${hash}.wav`;
 	}
 
 	private timingsPath(hash: string): string {

@@ -18,18 +18,17 @@
 		"@codemirror/state": "^6.6.0",
 		"@codemirror/view": "^6.43.0",
 		"@eslint/js": "9.30.1",
+		"@eslint/json": "^0.14.0",
 		"@types/node": "^18.19.0",
 		"@vitest/ui": "^2.1.9",
 		"esbuild": "0.25.5",
 		"eslint-plugin-obsidianmd": "0.1.9",
 		"globals": "14.0.0",
 		"jiti": "2.6.1",
+		"obsidian": "^1.11.4",
 		"tslib": "2.4.0",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "8.35.1",
 		"vitest": "^2.1.9"
-	},
-	"dependencies": {
-		"obsidian": "latest"
 	}
 }
