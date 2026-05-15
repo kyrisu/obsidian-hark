@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, SecretComponent, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type ReadAloudPlugin from "./main";
 import { GOOGLE_TTS_SECRET_ID } from "./types";
 import { GEMINI_VOICES, type GeminiVoice } from "./tts/voices";
@@ -48,13 +48,14 @@ export class ReadAloudSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Gemini API key")
 			.setDesc(desc)
-			.addComponent((el) => {
-				const secret = new SecretComponent(this.app, el);
-				secret.setValue(this.app.secretStorage.getSecret(GOOGLE_TTS_SECRET_ID) ?? "");
-				secret.onChange((value) => {
+			.addText((text) => {
+				text.inputEl.type = "password";
+				text.inputEl.autocomplete = "off";
+				text.setPlaceholder("Paste your API key");
+				text.setValue(this.app.secretStorage.getSecret(GOOGLE_TTS_SECRET_ID) ?? "");
+				text.onChange((value) => {
 					this.app.secretStorage.setSecret(GOOGLE_TTS_SECRET_ID, value.trim());
 				});
-				return secret;
 			});
 
 		const validateSetting = new Setting(containerEl)
@@ -71,6 +72,12 @@ export class ReadAloudSettingTab extends PluginSettingTab {
 					statusEl.setText(result.message);
 					statusEl.toggleClass("is-ok", result.ok);
 					statusEl.toggleClass("is-error", !result.ok);
+				} catch (err) {
+					statusEl.setText(
+						`Validation error: ${err instanceof Error ? err.message : String(err)}`,
+					);
+					statusEl.removeClass("is-ok");
+					statusEl.addClass("is-error");
 				} finally {
 					btn.setDisabled(false);
 				}

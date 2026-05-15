@@ -1,4 +1,4 @@
-import { requestUrl, type RequestUrlParam } from "obsidian";
+import { requestUrl, type RequestUrlParam, type RequestUrlResponse } from "obsidian";
 import { pcmDurationSec, pcmToWav } from "./wav";
 
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -58,7 +58,12 @@ interface GenerateContentResponse {
 		content?: { parts?: Array<{ inlineData?: InlineData }> };
 		finishReason?: string;
 	}>;
-	error?: { message?: string; status?: string; code?: number };
+	error?: {
+		message?: string;
+		status?: string;
+		code?: number;
+		details?: Array<{ reason?: string }>;
+	};
 }
 
 export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechResult> {
@@ -134,24 +139,83 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 export async function validateApiKey(
 	apiKey: string,
 ): Promise<{ ok: boolean; message: string }> {
-	if (!apiKey) return { ok: false, message: "No API key set." };
-	const resp = await requestUrl({
-		url: ENDPOINT_BASE,
-		method: "GET",
-		headers: { "x-goog-api-key": apiKey },
-		throw: false,
-	});
+	const key = apiKey.trim();
+	if (!key) return { ok: false, message: "No API key set." };
+
+	console.debug(
+		`[Read Aloud] Validating API key: length ${key.length}, ` +
+			`${key.slice(0, 8)}…${key.slice(-4)}`,
+	);
+
+	let resp: RequestUrlResponse;
+	try {
+		resp = await requestUrl({
+			url: ENDPOINT_BASE,
+			method: "GET",
+			headers: { "x-goog-api-key": key },
+			throw: false,
+		});
+	} catch (err) {
+		console.error("[Read Aloud] API key validation could not reach Google:", err);
+		const detail = err instanceof Error ? err.message : String(err);
+		return { ok: false, message: `Could not reach the Gemini API: ${detail}` };
+	}
+
 	if (resp.status >= 200 && resp.status < 300) {
 		return { ok: true, message: "API key is valid." };
 	}
-	let message = `Validation failed (HTTP ${resp.status}).`;
-	try {
-		const upstream = (resp.json as GenerateContentResponse).error?.message;
-		if (upstream) message = upstream;
-	} catch {
-		/* keep the generic message */
+
+	console.error(`[Read Aloud] API key validation failed (HTTP ${resp.status}):`, resp.text);
+	let message = describeUpstreamError(resp.status, resp.text);
+	if (!looksLikeGoogleApiKey(key)) {
+		message +=
+			' Note: this value does not look like a Google API key — those start with "AIza" and are 39 characters with no dashes. The UUID in a Cloud Console key URL is the key ID, not the key; use "Show key" to copy the real value, or create one at aistudio.google.com/apikey.';
 	}
 	return { ok: false, message };
+}
+
+function looksLikeGoogleApiKey(key: string): boolean {
+	return /^AIza[\w-]{35}$/.test(key);
+}
+
+function describeUpstreamError(status: number, rawBody: string): string {
+	let parsed: GenerateContentResponse = {};
+	try {
+		parsed = JSON.parse(rawBody) as GenerateContentResponse;
+	} catch {
+		/* response body was not JSON */
+	}
+	const err = parsed.error;
+	if (!err) {
+		const snippet = rawBody.trim().slice(0, 200);
+		return snippet
+			? `Validation failed (HTTP ${status}): ${snippet}`
+			: `Validation failed (HTTP ${status}).`;
+	}
+	const reason = err.details?.find((d) => d.reason)?.reason;
+	const tags = [err.status, reason, `HTTP ${status}`].filter(Boolean).join(", ");
+	const base = err.message ?? `Request failed with HTTP ${status}`;
+	const hint = hintForUpstreamError(reason, status);
+	return hint ? `${base} (${tags}) — ${hint}` : `${base} (${tags})`;
+}
+
+function hintForUpstreamError(reason: string | undefined, status: number): string {
+	switch (reason) {
+		case "API_KEY_INVALID":
+			return "Check for a typo or stray characters, and confirm the key was created at aistudio.google.com/apikey.";
+		case "SERVICE_DISABLED":
+		case "API_KEY_SERVICE_BLOCKED":
+			return "Enable the Generative Language API for this key's Google Cloud project, or create a fresh key at aistudio.google.com/apikey.";
+		case "API_KEY_HTTP_REFERRER_BLOCKED":
+		case "API_KEY_IP_ADDRESS_BLOCKED":
+		case "API_KEY_ANDROID_APP_BLOCKED":
+		case "API_KEY_IOS_APP_BLOCKED":
+			return "This key has application restrictions that block the request. Use a key with no application restrictions.";
+		default:
+			if (status === 403) return "The key was recognised but lacks permission for the Gemini API.";
+			if (status === 429) return "Rate or quota limit reached — wait a moment and try again.";
+			return "";
+	}
 }
 
 function parseSampleRate(mimeType: string | undefined): number | null {
