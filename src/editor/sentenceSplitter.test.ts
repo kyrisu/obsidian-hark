@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { parseParagraphs } from "./paragraphParser";
+import { coalesceShortParagraphs, parseParagraphs } from "./paragraphParser";
 import { splitSentences } from "./sentenceSplitter";
 
 function sentencesOf(source: string): string[] {
 	const paragraphs = parseParagraphs(source);
 	expect(paragraphs.length).toBe(1);
 	return splitSentences(paragraphs[0]!).map((s) => s.text);
+}
+
+// Builds a single coalesced paragraph (which carries blank-line gaps) and
+// returns its sentences.
+function coalescedSentencesOf(source: string): string[] {
+	const paragraphs = coalesceShortParagraphs(parseParagraphs(source));
+	expect(paragraphs.length).toBe(1);
+	return splitSentences(paragraphs[0]!).map((s) => s.text.trim());
 }
 
 describe("splitSentences", () => {
@@ -72,6 +80,31 @@ describe("splitSentences", () => {
 			"Pracuje jako inż. budowy.",
 			"Zna się na tym.",
 		]);
+	});
+
+	it("does not split a soft-wrapped paragraph on a single newline", () => {
+		const sentences = sentencesOf("Line one\nline two continues here.");
+		expect(sentences.length).toBe(1);
+	});
+
+	it("splits at a blank line so a merged heading stays its own sentence", () => {
+		expect(coalescedSentencesOf("# Introduction\n\nThis is the body.\n")).toEqual([
+			"Introduction",
+			"This is the body.",
+		]);
+	});
+
+	it("splits at a blank line even inside an unclosed paren", () => {
+		expect(coalescedSentencesOf("# Heading (open\n\nbody text.\n")).toEqual([
+			"Heading (open",
+			"body text.",
+		]);
+	});
+
+	it("does not carry an unclosed paren across a blank line", () => {
+		expect(
+			coalescedSentencesOf("# Heading (open\n\nFirst sentence. Second sentence.\n"),
+		).toEqual(["Heading (open", "First sentence.", "Second sentence."]);
 	});
 
 });

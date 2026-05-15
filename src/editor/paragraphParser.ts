@@ -1,6 +1,14 @@
 import type { Paragraph } from "../types";
 import { stripMarkdown } from "./markdownStripper";
 
+// A paragraph whose stripped text is shorter than this (a heading or a sentence
+// or two) yields audio too brief to cover the synthesis latency of the next
+// paragraph, so playback stalls at the seam. Such paragraphs are merged forward
+// into the following one so each synthesis unit is long enough. Tunable.
+export const SHORT_PARAGRAPH_CHAR_LIMIT = 160;
+
+const PARAGRAPH_GAP = "\n\n";
+
 export function parseParagraphs(source: string): Paragraph[] {
 	const result: Paragraph[] = [];
 	let i = skipFrontmatter(source);
@@ -37,6 +45,54 @@ export function parseParagraphs(source: string): Paragraph[] {
 	}
 
 	return result;
+}
+
+// Merges short paragraphs forward into the next so each playback unit produces
+// enough audio to mask the synthesis latency of whatever follows. Chains while
+// the accumulated text is still short; a short trailing paragraph with nothing
+// after it is left as-is. Indices are reassigned to stay contiguous.
+export function coalesceShortParagraphs(paragraphs: Paragraph[]): Paragraph[] {
+	const out: Paragraph[] = [];
+	let i = 0;
+	while (i < paragraphs.length) {
+		let merged = paragraphs[i]!;
+		let next = i + 1;
+		while (isShortParagraph(merged) && next < paragraphs.length) {
+			merged = mergeParagraphs(merged, paragraphs[next]!);
+			next++;
+		}
+		out.push({ ...merged, index: out.length });
+		i = next;
+	}
+	return out;
+}
+
+function isShortParagraph(p: Paragraph): boolean {
+	return p.strippedText.trim().length < SHORT_PARAGRAPH_CHAR_LIMIT;
+}
+
+function mergeParagraphs(a: Paragraph, b: Paragraph): Paragraph {
+	const strippedText = a.strippedText + PARAGRAPH_GAP + b.strippedText;
+	// The gap is whitespace and gets trimmed off sentence boundaries; any valid
+	// source offset within the first paragraph keeps the map well-formed.
+	const gapSource = a.strippedToSource[a.strippedToSource.length - 1] ?? a.sourceStart;
+	const strippedToSource = new Uint32Array(
+		a.strippedToSource.length + PARAGRAPH_GAP.length + b.strippedToSource.length,
+	);
+	strippedToSource.set(a.strippedToSource, 0);
+	for (let k = 0; k < PARAGRAPH_GAP.length; k++) {
+		strippedToSource[a.strippedToSource.length + k] = gapSource;
+	}
+	strippedToSource.set(b.strippedToSource, a.strippedToSource.length + PARAGRAPH_GAP.length);
+	return {
+		index: a.index,
+		sourceStart: a.sourceStart,
+		sourceEnd: b.sourceEnd,
+		sourceText: a.sourceText + b.sourceText,
+		strippedText,
+		strippedToSource,
+		byteLength: new TextEncoder().encode(strippedText).byteLength,
+	};
 }
 
 function skipFrontmatter(source: string): number {

@@ -7,7 +7,7 @@ import {
 	PluginSettings,
 } from "./types";
 import { ReadAloudSettingTab } from "./settings";
-import { parseParagraphs } from "./editor/paragraphParser";
+import { coalesceShortParagraphs, parseParagraphs } from "./editor/paragraphParser";
 import { paragraphsFromSelection } from "./editor/selectionReader";
 import {
 	activeEditorView,
@@ -166,7 +166,9 @@ export default class ReadAloudPlugin extends Plugin {
 
 	async startPlaybackFromSelection(editor: Editor): Promise<void> {
 		const documentParagraphs = parseParagraphs(editor.getValue());
-		const selected = paragraphsFromSelection(editor, documentParagraphs);
+		const selected = coalesceShortParagraphs(
+			paragraphsFromSelection(editor, documentParagraphs),
+		);
 		if (selected.length === 0) {
 			new Notice("Make a selection to read aloud.");
 			return;
@@ -190,7 +192,7 @@ export default class ReadAloudPlugin extends Plugin {
 		editor: Editor,
 		pickStart: (paragraphs: Paragraph[]) => number,
 	): Promise<void> {
-		const paragraphs = parseParagraphs(editor.getValue());
+		const paragraphs = coalesceShortParagraphs(parseParagraphs(editor.getValue()));
 		if (paragraphs.length === 0) {
 			new Notice("Note has no readable paragraphs.");
 			return;
