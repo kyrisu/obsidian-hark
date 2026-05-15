@@ -66,6 +66,10 @@ export class Cache {
 		return this.index.totalBytes;
 	}
 
+	setMaxBytes(maxBytes: number): void {
+		this.cacheMaxBytes = maxBytes;
+	}
+
 	async entries(): Promise<CacheEntry[]> {
 		return this.index.entries.slice().sort((a, b) => b.lastAccessedMs - a.lastAccessedMs);
 	}

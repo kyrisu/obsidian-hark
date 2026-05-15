@@ -1,10 +1,13 @@
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
-import { DEFAULT_SETTINGS, Paragraph, PlaybackUiState, PluginSettings } from "./types";
+import {
+	DEFAULT_SETTINGS,
+	GOOGLE_TTS_SECRET_ID,
+	Paragraph,
+	PlaybackUiState,
+	PluginSettings,
+} from "./types";
 import { ReadAloudSettingTab } from "./settings";
-import { cacheKey, sha256Hex } from "./tts/Hash";
-import { stripMarkdown } from "./editor/markdownStripper";
 import { parseParagraphs } from "./editor/paragraphParser";
-import { splitSentences } from "./editor/sentenceSplitter";
 import { paragraphsFromSelection } from "./editor/selectionReader";
 import {
 	activeEditorView,
@@ -28,7 +31,6 @@ export default class ReadAloudPlugin extends Plugin {
 	synthesizer!: Synthesizer;
 	player!: Player;
 	playbackQueue: PlaybackQueue | null = null;
-	__devKey?: string;
 
 	private statusBar: StatusBar | null = null;
 	private floatingPlayer: FloatingPlayer | null = null;
@@ -37,7 +39,7 @@ export default class ReadAloudPlugin extends Plugin {
 		await this.loadSettings();
 		this.cache = new Cache(this.app.vault.adapter, this.settings.cacheMaxBytes);
 		await this.cache.init();
-		this.synthesizer = new Synthesizer(this.cache, () => this.resolveApiKey());
+		this.synthesizer = new Synthesizer(this.cache, () => this.getGoogleApiKey());
 		let lastSentenceFrom: number | null = null;
 		this.player = new Player({
 			onHighlightChange: (state) => {
@@ -114,19 +116,6 @@ export default class ReadAloudPlugin extends Plugin {
 		);
 
 		registerCommands(this);
-
-		if (DEV) {
-			(this as unknown as { devModules: unknown }).devModules = {
-				tts: { Hash: { sha256Hex, cacheKey } },
-				editor: {
-					markdownStripper: { stripMarkdown },
-					paragraphParser: { parseParagraphs },
-					sentenceSplitter: { splitSentences },
-					selectionReader: { paragraphsFromSelection },
-					highlightExtension: { activeEditorView, applyHighlight },
-				},
-			};
-		}
 	}
 
 	async loadSettings() {
@@ -139,6 +128,16 @@ export default class ReadAloudPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.cache.setMaxBytes(this.settings.cacheMaxBytes);
+		this.playbackQueue?.applySettings({
+			voiceId: this.settings.voiceId,
+			prefetchLookahead: this.settings.prefetchLookahead,
+			autoAdvance: this.settings.autoAdvance,
+		});
+	}
+
+	async getGoogleApiKey(): Promise<string> {
+		return this.app.secretStorage.getSecret(GOOGLE_TTS_SECRET_ID) ?? "";
 	}
 
 	onunload() {
@@ -170,7 +169,7 @@ export default class ReadAloudPlugin extends Plugin {
 		void this.applyRate(this.settings.playbackRate + delta);
 	}
 
-	private async applyRate(rate: number): Promise<void> {
+	async applyRate(rate: number): Promise<void> {
 		const clamped = clamp(rate, MIN_RATE, MAX_RATE);
 		this.settings.playbackRate = clamped;
 		this.player.setRate(clamped);
@@ -227,10 +226,6 @@ export default class ReadAloudPlugin extends Plugin {
 		this.floatingPlayer?.setState(ui);
 	}
 
-	private async resolveApiKey(): Promise<string> {
-		if (this.__devKey) return this.__devKey;
-		return "";
-	}
 }
 
 function findParagraphAtOffset(

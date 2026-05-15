@@ -27,11 +27,28 @@ export class PlaybackQueue {
 
 	constructor(
 		private readonly paragraphs: Paragraph[],
-		private readonly voiceId: string,
+		private voiceId: string,
 		private readonly synthesizer: Synthesizer,
 		private readonly player: Player,
 		private readonly options: PlaybackQueueOptions,
 	) {}
+
+	applySettings(next: { voiceId: string; prefetchLookahead: number; autoAdvance: boolean }): void {
+		this.options.prefetchLookahead = next.prefetchLookahead;
+		this.options.autoAdvance = next.autoAdvance;
+		if (next.voiceId === this.voiceId) return;
+		this.voiceId = next.voiceId;
+		// Drop audio rendered with the old voice so upcoming paragraphs
+		// re-synthesise with the new one. The currently-playing paragraph keeps
+		// its old-voice chunks (already loaded into the Player) so it finishes
+		// cleanly — including any remaining sub-chunks of an oversize paragraph.
+		for (const [, entry] of this.prefetch) entry.controller.abort();
+		this.prefetch.clear();
+		const currentIdx = this.cursor?.paragraphIdx;
+		for (const idx of [...this.chunkResults.keys()]) {
+			if (idx !== currentIdx) this.chunkResults.delete(idx);
+		}
+	}
 
 	async play(fromParagraphIdx: number): Promise<void> {
 		if (fromParagraphIdx < 0 || fromParagraphIdx >= this.paragraphs.length) return;

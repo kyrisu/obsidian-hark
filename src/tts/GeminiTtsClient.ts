@@ -131,6 +131,29 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 	};
 }
 
+export async function validateApiKey(
+	apiKey: string,
+): Promise<{ ok: boolean; message: string }> {
+	if (!apiKey) return { ok: false, message: "No API key set." };
+	const resp = await requestUrl({
+		url: ENDPOINT_BASE,
+		method: "GET",
+		headers: { "x-goog-api-key": apiKey },
+		throw: false,
+	});
+	if (resp.status >= 200 && resp.status < 300) {
+		return { ok: true, message: "API key is valid." };
+	}
+	let message = `Validation failed (HTTP ${resp.status}).`;
+	try {
+		const upstream = (resp.json as GenerateContentResponse).error?.message;
+		if (upstream) message = upstream;
+	} catch {
+		/* keep the generic message */
+	}
+	return { ok: false, message };
+}
+
 function parseSampleRate(mimeType: string | undefined): number | null {
 	if (!mimeType) return null;
 	const match = /rate=(\d+)/.exec(mimeType);

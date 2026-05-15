@@ -43,7 +43,6 @@ export interface CacheIndex {
 }
 
 export interface PluginSettings {
-	googleApiKeyName: string;
 	voiceId: string;
 	playbackRate: number;
 	autoAdvance: boolean;
@@ -53,8 +52,7 @@ export interface PluginSettings {
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	googleApiKeyName: "tts-read-aloud:google",
-	voiceId: "",
+	voiceId: "Aoede",
 	playbackRate: 1.0,
 	autoAdvance: true,
 	prefetchLookahead: 2,
@@ -63,5 +61,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 };
 
 export const PLUGIN_LANGUAGE = "en-US";
+
+// SecretStorage id for the Gemini API key. Lowercase alphanumeric with dashes
+// only — colons and other characters are rejected by app.secretStorage.
+export const GOOGLE_TTS_SECRET_ID = "tts-read-aloud-gemini-api-key";
 
 export type PlaybackUiState = "idle" | "loading" | "playing" | "paused" | "error";
