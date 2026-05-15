@@ -3,7 +3,7 @@
 	"name": "Read Aloud (Gemini-TTS)",
 	"version": "0.1.0",
 	"minAppVersion": "1.11.4",
-	"description": "Read your English markdown notes aloud with Google Gemini 2.5 Flash TTS. Sentence-level highlight in Live Preview and Source mode.",
+	"description": "Read your markdown notes aloud with Google Gemini 2.5 Flash TTS. Sentence-level highlight in Live Preview and Source mode.",
 	"author": "kyrisu",
 	"authorUrl": "",
 	"isDesktopOnly": false

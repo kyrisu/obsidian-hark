@@ -7,7 +7,7 @@
 > UX claim once Phases 3–7 have been manually verified. Search this file for
 > `TODO:` markers.
 
-Read your English markdown notes aloud in Obsidian using Google's **Gemini 2.5
+Read your markdown notes aloud in Obsidian using Google's **Gemini 2.5
 Flash TTS**. The currently-spoken sentence is highlighted in Live Preview and
 Source mode, with a sub-cursor that scans across the words to approximate
 word-level position. Audio is cached locally, so re-listening to a note costs
@@ -112,7 +112,12 @@ command.
 
 ## Known limitations
 
-- **English only.** Multi-language support is planned for v1.1.
+- **Sentence highlighting is tuned for `.` `!` `?` punctuation.** Gemini
+  auto-detects the spoken language, so playback works across many languages —
+  English, Spanish, Polish, and other European languages are well covered.
+  Languages that do not end sentences with `.`, `!`, or `?` (such as Chinese or
+  Japanese) still play correctly, but the highlight treats the whole paragraph
+  as a single block.
 - **Sentence-level highlight only.** The sub-cursor that scans within a sentence
   is interpolated from the sentence's duration, not measured — it can drift from
   the audible word on sentences with unusual rhythm. The sentence box itself

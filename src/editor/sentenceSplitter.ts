@@ -10,14 +10,27 @@ export interface Sentence {
 	words: SourceWord[];
 }
 
+// Case-sensitive: lowercase entries are Polish, capitalized are English/Spanish
+// titles. Lowercasing the lookup would merge English sentences ending in words
+// like "CD." into whatever follows.
 const ABBREVIATIONS = new Set([
+	// English
 	"Mr", "Mrs", "Ms", "Mx", "Dr", "Sr", "Jr", "St", "Mt", "Ft",
 	"Rev", "Hon", "Prof", "Sen", "Gen", "Col", "Cmdr", "Capt", "Lt",
 	"Sgt", "Cpl", "Pvt", "Inc", "Ltd", "Co", "Corp", "etc", "vs", "cf",
 	"i.e", "e.g", "Ph.D", "U.S", "U.K", "a.m", "p.m",
+	// Spanish
+	"Sra", "Srta", "Sres", "Ud", "Uds", "Vd", "Vds", "Dra", "Dña",
+	"Lic", "Ing", "Profa", "Gral", "Excmo", "Excma", "Sto", "Sta",
+	"pág", "págs", "núm", "Av", "Avda",
+	// Polish
+	"np", "itd", "itp", "tj", "tzn", "tzw", "m.in", "dr", "prof",
+	"mgr", "inż", "ul", "nr", "godz", "wg", "ds", "św", "płk",
+	"kpt", "pkt", "ww", "cd",
 ]);
 
 const WHITESPACE = /\s/;
+const WORD_CHAR = /[\p{L}\p{N}]/u;
 const TERMINATORS = ".!?";
 
 export function splitSentences(paragraph: Paragraph): Sentence[] {
@@ -132,7 +145,7 @@ function wordBefore(text: string, atPunct: number): string {
 	let k = atPunct - 1;
 	while (k >= 0) {
 		const ch = text.charAt(k);
-		if ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") || ch === ".") {
+		if (WORD_CHAR.test(ch) || ch === ".") {
 			k--;
 			continue;
 		}

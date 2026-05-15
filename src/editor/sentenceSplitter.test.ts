@@ -49,6 +49,31 @@ describe("splitSentences", () => {
 		expect(sentencesOf("Really?! Yes.")).toEqual(["Really?!", "Yes."]);
 	});
 
+	it("does not split on the Spanish abbreviation Sra.", () => {
+		expect(sentencesOf("La Sra. García llegó. Estaba cansada.")).toEqual([
+			"La Sra. García llegó.",
+			"Estaba cansada.",
+		]);
+	});
+
+	it("splits Spanish sentences ending with accented words", () => {
+		expect(sentencesOf("¿Cómo estás? Muy bien.")).toEqual(["¿Cómo estás?", "Muy bien."]);
+	});
+
+	it("does not split on the Polish abbreviation np.", () => {
+		expect(sentencesOf("Lubię owoce, np. jabłka. Smakują dobrze.")).toEqual([
+			"Lubię owoce, np. jabłka.",
+			"Smakują dobrze.",
+		]);
+	});
+
+	it("does not split on a Polish abbreviation ending in an accented letter", () => {
+		expect(sentencesOf("Pracuje jako inż. budowy. Zna się na tym.")).toEqual([
+			"Pracuje jako inż. budowy.",
+			"Zna się na tym.",
+		]);
+	});
+
 	it("emits source-mapped word tokens for each sentence", () => {
 		const paragraphs = parseParagraphs("Hello world. Goodbye.");
 		const sentences = splitSentences(paragraphs[0]!);
