@@ -1,4 +1,4 @@
-import type { Paragraph, SourceWord } from "../types";
+import type { Paragraph } from "../types";
 
 export interface Sentence {
 	strippedStart: number;
@@ -7,7 +7,6 @@ export interface Sentence {
 	sourceEnd: number;
 	text: string;
 	byteLength: number;
-	words: SourceWord[];
 }
 
 // Case-sensitive: lowercase entries are Polish, capitalized are English/Spanish
@@ -96,7 +95,6 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 
 	const sentences: Sentence[] = [];
 	let prev = 0;
-	let sIdx = 0;
 
 	for (const segEnd of segments) {
 		const start = skipWhitespace(text, prev);
@@ -116,8 +114,6 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 		const lastSourceIdx = paragraph.strippedToSource[end - 1] ?? paragraph.sourceStart;
 		const sourceEnd = lastSourceIdx + 1;
 
-		const words = tokenizeWords(text, start, end, paragraph);
-
 		sentences.push({
 			strippedStart: start,
 			strippedEnd: end,
@@ -125,13 +121,10 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 			sourceEnd,
 			text: senText,
 			byteLength: new TextEncoder().encode(senText).byteLength,
-			words,
 		});
-		sIdx++;
 		prev = segEnd;
 	}
 
-	void sIdx;
 	return sentences;
 }
 
@@ -152,30 +145,4 @@ function wordBefore(text: string, atPunct: number): string {
 		break;
 	}
 	return text.slice(k + 1, atPunct);
-}
-
-function tokenizeWords(
-	text: string,
-	start: number,
-	end: number,
-	paragraph: Paragraph,
-): SourceWord[] {
-	const words: SourceWord[] = [];
-	let wordStart = -1;
-	for (let k = start; k <= end; k++) {
-		const isBoundary = k >= end || WHITESPACE.test(text.charAt(k));
-		if (isBoundary) {
-			if (wordStart !== -1) {
-				const wText = text.slice(wordStart, k);
-				const wSrcStart = paragraph.strippedToSource[wordStart] ?? paragraph.sourceStart;
-				const wSrcEnd =
-					(paragraph.strippedToSource[k - 1] ?? paragraph.sourceStart) + 1;
-				words.push({ text: wText, sourceStart: wSrcStart, sourceEnd: wSrcEnd });
-				wordStart = -1;
-			}
-		} else if (wordStart === -1) {
-			wordStart = k;
-		}
-	}
-	return words;
 }

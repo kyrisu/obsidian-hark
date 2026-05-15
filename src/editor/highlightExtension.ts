@@ -4,7 +4,6 @@ import { MarkdownView, type App } from "obsidian";
 
 export interface TtsHighlightState {
 	sentence: { from: number; to: number };
-	word: { from: number; to: number } | null;
 }
 
 export const setTtsHighlight = StateEffect.define<TtsHighlightState | null>();
@@ -15,23 +14,12 @@ export const ttsHighlightField = StateField.define<DecorationSet>({
 		for (const e of tr.effects) {
 			if (e.is(setTtsHighlight)) {
 				if (!e.value) return Decoration.none;
-				const marks = [
+				return Decoration.set([
 					Decoration.mark({ class: "tts-sentence" }).range(
 						e.value.sentence.from,
 						e.value.sentence.to,
 					),
-				];
-				if (e.value.word) {
-					marks.push(
-						Decoration.mark({ class: "tts-word-cursor" }).range(
-							e.value.word.from,
-							e.value.word.to,
-						),
-					);
-				}
-				// CM6 requires marks sorted by `from` ascending; sub-cursor sits inside the sentence range.
-				marks.sort((a, b) => a.from - b.from);
-				return Decoration.set(marks);
+				]);
 			}
 		}
 		return deco.map(tr.changes);

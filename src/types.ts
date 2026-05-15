@@ -1,16 +1,9 @@
-export interface SourceWord {
-	text: string;
-	sourceStart: number;
-	sourceEnd: number;
-}
-
 export interface SentenceTiming {
 	index: number;
 	startTime: number;
 	endTime: number;
 	sourceStart: number;
 	sourceEnd: number;
-	words: SourceWord[];
 }
 
 export interface Paragraph {

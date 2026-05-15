@@ -20,7 +20,6 @@ export class Player {
 	private currentUrl: string | null = null;
 	private rafHandle: number | null = null;
 	private lastSentenceIdx = -1;
-	private lastWordIdx = -1;
 	private state: PlayerState = "idle";
 
 	constructor(private options: PlayerOptions = {}) {}
@@ -73,7 +72,6 @@ export class Player {
 		this.stopFrameLoop();
 		// Reset frame-loop dedup so the next resume re-emits the current highlight.
 		this.lastSentenceIdx = -1;
-		this.lastWordIdx = -1;
 		this.setState("paused");
 	}
 
@@ -91,7 +89,6 @@ export class Player {
 		}
 		this.sentences = [];
 		this.lastSentenceIdx = -1;
-		this.lastWordIdx = -1;
 		this.options.onHighlightChange?.(null);
 		this.setState("idle");
 	}
@@ -175,28 +172,16 @@ export class Player {
 		if (sIdx === -1) {
 			if (this.lastSentenceIdx !== -1) {
 				this.lastSentenceIdx = -1;
-				this.lastWordIdx = -1;
 				this.options.onHighlightChange?.(null);
 			}
 			return;
 		}
 		const s = sentences[sIdx];
 		if (!s) return;
-		const span = Math.max(s.endTime - s.startTime, 0.001);
-		const wIdx =
-			s.words.length === 0
-				? -1
-				: Math.max(
-						0,
-						Math.min(s.words.length - 1, Math.floor(((t - s.startTime) / span) * s.words.length)),
-					);
-		if (sIdx === this.lastSentenceIdx && wIdx === this.lastWordIdx) return;
+		if (sIdx === this.lastSentenceIdx) return;
 		this.lastSentenceIdx = sIdx;
-		this.lastWordIdx = wIdx;
-		const activeWord = wIdx >= 0 ? s.words[wIdx] : undefined;
 		this.options.onHighlightChange?.({
 			sentence: { from: s.sourceStart, to: s.sourceEnd },
-			word: activeWord ? { from: activeWord.sourceStart, to: activeWord.sourceEnd } : null,
 		});
 	}
 

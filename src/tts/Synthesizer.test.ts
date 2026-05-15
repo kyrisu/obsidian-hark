@@ -11,7 +11,6 @@ function sentence(partial: Partial<Sentence> & { text: string }): Sentence {
 		sourceEnd: partial.sourceEnd ?? partial.text.length,
 		text: partial.text,
 		byteLength: partial.byteLength ?? new TextEncoder().encode(partial.text).byteLength,
-		words: partial.words ?? [],
 	};
 }
 
@@ -51,19 +50,11 @@ describe("distributeSentenceTimings", () => {
 		expect(distributeSentenceTimings([], 5)).toEqual([]);
 	});
 
-	it("preserves sourceStart, sourceEnd, and words from each sentence", () => {
-		const sentences = [
-			sentence({
-				text: "One.",
-				sourceStart: 10,
-				sourceEnd: 14,
-				words: [{ text: "One", sourceStart: 10, sourceEnd: 13 }],
-			}),
-		];
+	it("preserves sourceStart and sourceEnd from each sentence", () => {
+		const sentences = [sentence({ text: "One.", sourceStart: 10, sourceEnd: 14 })];
 		const timings = distributeSentenceTimings(sentences, 1);
 		expect(timings[0]!.sourceStart).toBe(10);
 		expect(timings[0]!.sourceEnd).toBe(14);
-		expect(timings[0]!.words).toEqual([{ text: "One", sourceStart: 10, sourceEnd: 13 }]);
 		expect(timings[0]!.endTime).toBe(1);
 	});
 });

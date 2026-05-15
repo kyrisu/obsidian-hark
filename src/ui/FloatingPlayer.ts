@@ -1,3 +1,4 @@
+import { setIcon } from "obsidian";
 import type { PlaybackUiState } from "../types";
 import { clamp } from "../utils/math";
 
@@ -46,28 +47,41 @@ export class FloatingPlayer {
 		});
 		this.handle.addEventListener("mousedown", this.handleDragStart);
 
-		this.makeButton("⏮", "Previous paragraph", () => this.options.onSkipPrevious());
-		this.playPauseBtn = this.makeButton("▶", "Play / pause", () => this.options.onPlayPause());
-		this.makeButton("⏭", "Next paragraph", () => this.options.onSkipNext());
-		this.makeButton("⏹", "Stop", () => this.options.onStop());
+		const controls = this.root.createEl("div", { cls: "tts-floating-player__controls" });
 
-		this.paraIndicator = this.root.createEl("span", {
+		this.makeButton(controls, "skip-back", "Previous paragraph", () =>
+			this.options.onSkipPrevious(),
+		);
+		this.playPauseBtn = this.makeButton(controls, "play", "Play / pause", () =>
+			this.options.onPlayPause(),
+		);
+		this.makeButton(controls, "skip-forward", "Next paragraph", () => this.options.onSkipNext());
+		this.makeButton(controls, "square", "Stop", () => this.options.onStop());
+
+		this.paraIndicator = controls.createEl("span", {
 			cls: "tts-floating-player__paragraph",
 			text: "—",
 		});
 
-		this.progressTrack = this.root.createEl("div", { cls: "tts-floating-player__progress" });
+		this.progressTrack = controls.createEl("div", { cls: "tts-floating-player__progress" });
 		this.progressFill = this.progressTrack.createEl("div", {
 			cls: "tts-floating-player__progress-fill",
 		});
 		this.progressTrack.addEventListener("click", this.handleSeekClick);
 
-		this.timeLabel = this.root.createEl("span", {
+		this.timeLabel = controls.createEl("span", {
 			cls: "tts-floating-player__time",
 			text: "00:00 / 00:00",
 		});
 
-		this.speedSelect = this.root.createEl("select", { cls: "tts-floating-player__speed" });
+		const loading = this.root.createEl("div", { cls: "tts-floating-player__loading" });
+		loading.createEl("div", { cls: "tts-floating-player__spinner" });
+		loading.createEl("span", {
+			cls: "tts-floating-player__loading-label",
+			text: "Preparing audio…",
+		});
+
+		this.speedSelect = controls.createEl("select", { cls: "tts-floating-player__speed" });
 		for (const s of options.speeds) {
 			this.speedSelect.createEl("option", { value: String(s), text: `${s}×` });
 		}
@@ -85,7 +99,7 @@ export class FloatingPlayer {
 		if (this.state === next) return;
 		this.state = next;
 		this.root.setAttribute("data-state", next);
-		this.playPauseBtn.textContent = next === "playing" ? "⏸" : "▶";
+		setIcon(this.playPauseBtn, next === "playing" ? "pause" : "play");
 		if (next === "playing") this.startTick();
 		else this.stopTick();
 		if (next === "idle") this.updateProgress(0, 0);
@@ -108,12 +122,17 @@ export class FloatingPlayer {
 		this.root.remove();
 	}
 
-	private makeButton(label: string, title: string, onClick: () => void): HTMLButtonElement {
-		const btn = this.root.createEl("button", {
-			cls: "tts-floating-player__btn",
-			text: label,
+	private makeButton(
+		parent: HTMLElement,
+		icon: string,
+		title: string,
+		onClick: () => void,
+	): HTMLButtonElement {
+		const btn = parent.createEl("button", {
+			cls: "tts-floating-player__btn clickable-icon",
 			attr: { title, "aria-label": title },
 		});
+		setIcon(btn, icon);
 		btn.addEventListener("click", onClick);
 		return btn;
 	}
@@ -124,8 +143,9 @@ export class FloatingPlayer {
 		this.root.setCssStyles({ left: `${0}px`, top: `${0}px` });
 		// `data-state="idle"` hides the element via display:none, which makes
 		// getBoundingClientRect return zero size. Temporarily switch to a visible
-		// state for the measurement, then restore idle.
-		this.root.setAttribute("data-state", "loading");
+		// state that shows the full transport controls — the widest layout — so the
+		// placement clamp accounts for the player's real size, then restore idle.
+		this.root.setAttribute("data-state", "paused");
 		const rect = this.root.getBoundingClientRect();
 		this.root.setAttribute("data-state", "idle");
 		const fallback = {

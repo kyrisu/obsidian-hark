@@ -92,7 +92,7 @@ export default class ReadAloudPlugin extends Plugin {
 		});
 		this.register(() => this.floatingPlayer?.remove());
 
-		this.addRibbonIcon("audio-file", "Read note aloud", () => {
+		this.addRibbonIcon("audio-file", "Read aloud from cursor", () => {
 			const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (!view) {
 				new Notice("Open a note to read aloud.");
@@ -103,15 +103,24 @@ export default class ReadAloudPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("editor-menu", (menu, editor) => {
-				if (editor.getSelection().length === 0) return;
 				menu.addItem((item) =>
 					item
-						.setTitle("Read selection aloud")
+						.setTitle("Read aloud from here")
 						.setIcon("audio-file")
 						.onClick(() => {
-							void this.startPlaybackFromSelection(editor);
+							void this.startPlaybackFromCursor(editor);
 						}),
 				);
+				if (editor.getSelection().length > 0) {
+					menu.addItem((item) =>
+						item
+							.setTitle("Read selection aloud")
+							.setIcon("audio-file")
+							.onClick(() => {
+								void this.startPlaybackFromSelection(editor);
+							}),
+					);
+				}
 			}),
 		);
 

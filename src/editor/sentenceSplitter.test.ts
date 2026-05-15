@@ -74,12 +74,4 @@ describe("splitSentences", () => {
 		]);
 	});
 
-	it("emits source-mapped word tokens for each sentence", () => {
-		const paragraphs = parseParagraphs("Hello world. Goodbye.");
-		const sentences = splitSentences(paragraphs[0]!);
-		expect(sentences[0]!.words.map((w) => w.text)).toEqual(["Hello", "world."]);
-		expect(sentences[1]!.words.map((w) => w.text)).toEqual(["Goodbye."]);
-		expect(sentences[0]!.words[0]!.sourceStart).toBe(0);
-		expect(sentences[0]!.words[0]!.sourceEnd).toBe(5);
-	});
 });

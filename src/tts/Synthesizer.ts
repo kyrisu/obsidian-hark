@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import type { Paragraph, SentenceTiming, SourceWord, SynthResult } from "../types";
+import type { Paragraph, SentenceTiming, SynthResult } from "../types";
 import { splitSentences, type Sentence } from "../editor/sentenceSplitter";
 import { cacheKey, sha256Hex } from "./Hash";
 import {
@@ -137,7 +137,6 @@ export function distributeSentenceTimings(
 			endTime,
 			sourceStart: s.sourceStart,
 			sourceEnd: s.sourceEnd,
-			words: s.words,
 		};
 	});
 }
@@ -208,9 +207,6 @@ function splitOversizeSentence(
 			paragraph.strippedToSource[strippedStart] ?? sentence.sourceStart;
 		const sourceEnd =
 			(paragraph.strippedToSource[strippedEnd - 1] ?? sentence.sourceEnd - 1) + 1;
-		const wordsInPiece: SourceWord[] = sentence.words.filter(
-			(w) => w.sourceStart >= sourceStart && w.sourceEnd <= sourceEnd,
-		);
 		pieces.push({
 			strippedStart,
 			strippedEnd,
@@ -218,7 +214,6 @@ function splitOversizeSentence(
 			sourceEnd,
 			text: pieceText,
 			byteLength: encoder.encode(pieceText).byteLength,
-			words: wordsInPiece,
 		});
 		pieceStart = end;
 		while (pieceStart < text.length && /\s/.test(text.charAt(pieceStart))) pieceStart++;

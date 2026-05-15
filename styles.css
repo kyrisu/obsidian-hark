@@ -5,13 +5,6 @@
 	transition: background-color 120ms ease-out;
 }
 
-.tts-word-cursor {
-	background-color: var(--text-highlight-bg);
-	border-radius: 2px;
-	padding: 0 1px;
-	transition: background-color 80ms ease-out;
-}
-
 .tts-floating-player {
 	position: fixed;
 	z-index: var(--layer-popover);
@@ -41,19 +34,44 @@
 	cursor: grabbing;
 }
 
-.tts-floating-player__btn {
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	color: var(--text-normal);
-	padding: 2px 6px;
-	border-radius: 4px;
-	font-size: var(--font-ui-medium);
-	line-height: 1;
+.tts-floating-player__controls {
+	display: flex;
+	gap: 8px;
+	align-items: center;
 }
 
-.tts-floating-player__btn:hover {
-	background: var(--background-modifier-hover);
+.tts-floating-player__btn {
+	--icon-size: 16px;
+}
+
+.tts-floating-player__loading {
+	display: none;
+	gap: 8px;
+	align-items: center;
+	color: var(--text-muted);
+}
+
+.tts-floating-player[data-state="loading"] .tts-floating-player__controls {
+	display: none;
+}
+
+.tts-floating-player[data-state="loading"] .tts-floating-player__loading {
+	display: flex;
+}
+
+.tts-floating-player__spinner {
+	width: 14px;
+	height: 14px;
+	border: 2px solid var(--background-modifier-border);
+	border-top-color: var(--interactive-accent);
+	border-radius: 50%;
+	animation: tts-floating-player-spin 0.7s linear infinite;
+}
+
+@keyframes tts-floating-player-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .tts-floating-player__paragraph {
