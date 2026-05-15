@@ -1,90 +1,134 @@
-# Obsidian Sample Plugin
+# Read Aloud (Gemini-TTS)
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+> **⚠️ Draft README — skeleton only.** This file is structurally complete but is
+> not release-ready. Items that need the maintainer before v1.0 ship:
+> screenshots / a demo GIF, the confirmed Gemini API price, the OS Now Playing
+> section (gated on the Phase 0 `mediaSession` preflight), and a pass over every
+> UX claim once Phases 3–7 have been manually verified. Search this file for
+> `TODO:` markers.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Read your English markdown notes aloud in Obsidian using Google's **Gemini 2.5
+Flash TTS**. The currently-spoken sentence is highlighted in Live Preview and
+Source mode, with a sub-cursor that scans across the words to approximate
+word-level position. Audio is cached locally, so re-listening to a note costs
+nothing.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+<!-- TODO: add one screenshot or GIF showing the floating mini-player, the
+     sentence highlight, and the sub-cursor in Live Preview. -->
 
-## First time developing plugins?
+## Requirements
 
-Quick starting guide for new plugin devs:
+- Obsidian **1.11.4** or newer (the plugin uses `SecretStorage`, introduced in 1.11.4).
+- A Google **Gemini API key** — a single key, no second service required.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## Getting a Gemini API key
 
-## Releasing new releases
+1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in with a Google account.
+2. Click **Get API key** and create a key (a new or existing Google Cloud project).
+3. Copy the key. In Obsidian, open **Settings → Read Aloud (Gemini-TTS)**, paste the key into the **Gemini API key** field, and click **Validate**.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+The key is stored in Obsidian's `SecretStorage` rather than in the plugin's
+`data.json`. The plugin calls the Gemini Developer API at
+`generativelanguage.googleapis.com`.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+<!-- TODO: add screenshots of the AI Studio "Get API key" page and the plugin
+     settings credential field. -->
 
-## Adding your plugin to the community plugin list
+## Cost
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Synthesis is billed by the Gemini Developer API for the
+`gemini-2.5-flash-preview-tts` model. Once a paragraph is synthesised it is
+cached locally, so replays of the same note and voice are free.
 
-## How to use
+<!-- TODO: quote the current Gemini Developer API TTS rate from
+     https://ai.google.dev/pricing and give a worked example (e.g. cost of a
+     1,000-word note). Do NOT reuse the old Cloud-TTS "$15 / 1M chars" figure —
+     that was a different product. -->
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## Installation
 
-## Manually installing the plugin
+Until the plugin is in the community catalogue, install it from a local build:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+1. Clone this repository.
+2. Run `npm install` then `npm run build` — this produces `main.js`.
+3. Copy (or symlink) `main.js`, `manifest.json`, and `styles.css` into
+   `<your-vault>/.obsidian/plugins/tts-read-aloud/`.
+4. In Obsidian, enable **Read Aloud (Gemini-TTS)** under **Settings → Community plugins**.
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+## Usage
 
-## Funding URL
+Open a markdown note, then either click the **Read note aloud** ribbon icon
+(the audio-file icon in the left ribbon) or run one of the commands below from
+the command palette. A draggable floating mini-player appears with play/pause,
+stop, previous/next paragraph, a speed selector, and a seek bar; the status bar
+also shows playback state.
 
-You can include funding URLs where people who use your plugin can financially support it.
+Commands (no default hotkeys — assign your own under **Settings → Hotkeys**):
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+| Command | What it does |
+| --- | --- |
+| Read note aloud from cursor | Starts at the paragraph the cursor is in |
+| Read note aloud from beginning | Starts at the top of the note |
+| Read selection aloud | Reads only the selected text (also on the right-click menu) |
+| Pause or resume reading | Toggles playback |
+| Stop reading | Stops and clears the highlight |
+| Skip to next paragraph | Jumps forward one paragraph |
+| Go back one paragraph | Jumps back one paragraph |
+| Increase reading speed | +0.25× (range 0.5×–2.0×) |
+| Decrease reading speed | −0.25× |
+| Clear cache | Deletes all cached audio |
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+To read part of a note, select the text (a selection may span multiple
+paragraphs), then right-click and choose **Read selection aloud** or run the
+command. Multi-paragraph selections are trimmed to the selection bounds.
 
-If you have multiple URLs, you can also do:
+<!-- TODO: re-verify every command name, the ribbon tooltip, and the
+     floating-player controls against the running plugin after manual
+     verification of Phases 3–7. -->
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+## OS Now Playing controls
 
-## API Documentation
+<!-- TODO: This section is gated on the Phase 0 `mediaSession` preflight, which
+     has not been run. As shipped, `MediaSessionBinding.ts` is a no-op stub, so
+     OS-level Now Playing controls (macOS Now Playing, Windows SMTC, Linux
+     MPRIS) are NOT wired up yet. Either complete Phase 0 + the Phase 8 binding
+     and document what works per-OS here, or remove this section. -->
 
-See https://docs.obsidian.md
+## Privacy & data flow
+
+When you read a note aloud, the text of each paragraph is sent to Google's
+Gemini Developer API for synthesis. Review Google's data-use and retention
+terms for the Gemini API before using the plugin with sensitive notes; note
+that free-tier and paid-tier data handling differ. No text is sent anywhere
+else, and nothing is sent for paragraphs already in the local cache.
+
+## Cache
+
+Synthesised audio (WAV) and sentence-timing data are content-hashed and stored
+in `<your-vault>/.tts-cache/`. The dot-prefixed folder name keeps the cache out
+of Obsidian Sync. The cache uses LRU eviction under a size limit configurable
+in settings; you can also clear it from the settings tab or the **Clear cache**
+command.
+
+## Known limitations
+
+- **English only.** Multi-language support is planned for v1.1.
+- **Sentence-level highlight only.** The sub-cursor that scans within a sentence
+  is interpolated from the sentence's duration, not measured — it can drift from
+  the audible word on sentences with unusual rhythm. The sentence box itself
+  stays correct. Measured word-level timing is the headline v1.1 feature.
+- **Reading mode plays audio but does not highlight.** The highlight is a Live
+  Preview / Source mode feature in v1.0.
+- **Mobile loads but is not actively tested** in v1.0.
+- **Android does not support OS Now Playing controls** — a structural limitation
+  of the Capacitor WebView.
+- **AirPods media keys on macOS** may not register, due to an upstream Electron bug.
+- **A brief (~50 ms) gap** can be heard between paragraphs.
+
+## License
+
+[0-BSD](LICENSE).
+
+<!-- TODO: the LICENSE file still carries the sample plugin's
+     "Copyright (C) 2020-2025 by Dynalist Inc." line — update the copyright
+     holder before release. -->
