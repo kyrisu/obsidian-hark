@@ -3,8 +3,8 @@ import type { Paragraph, SentenceTiming, SynthResult } from "../types";
 import { splitSentences, type Sentence } from "../editor/sentenceSplitter";
 import { cacheKey, sha256Hex } from "./Hash";
 import {
+	ACTIVE_TTS_MODEL,
 	GeminiTtsError,
-	MAX_REQUEST_BYTES,
 	RequestAbortedError,
 	RequestTooLargeError,
 	synthesizeSpeech as defaultSynthesizeSpeech,
@@ -12,8 +12,6 @@ import {
 	type SpeechResult,
 } from "./GeminiTtsClient";
 import type { Cache } from "./Cache";
-
-const MAX_SUB_CHUNK_BYTES = 4500;
 
 type SynthesizeFn = (req: GeminiTtsRequest) => Promise<SpeechResult>;
 
@@ -39,7 +37,7 @@ export class Synthesizer {
 		voiceId: string,
 		signal?: AbortSignal,
 	): Promise<SynthResult> {
-		if (paragraph.byteLength > MAX_REQUEST_BYTES) {
+		if (paragraph.byteLength > ACTIVE_TTS_MODEL.maxRequestBytes) {
 			throw new RequestTooLargeError(paragraph.byteLength);
 		}
 		const sentences = splitSentences(paragraph);
@@ -52,7 +50,7 @@ export class Synthesizer {
 		signal?: AbortSignal,
 	): Promise<SynthResult[]> {
 		const sentences = splitSentences(paragraph);
-		const groups = binPackSentences(sentences, paragraph, MAX_SUB_CHUNK_BYTES, () =>
+		const groups = binPackSentences(sentences, paragraph, ACTIVE_TTS_MODEL.maxRequestBytes, () =>
 			this.notifyOversizeOnce(paragraph.index),
 		);
 		const results: SynthResult[] = [];

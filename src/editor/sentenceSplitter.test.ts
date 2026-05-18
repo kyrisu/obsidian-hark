@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coalesceShortParagraphs, parseParagraphs } from "./paragraphParser";
+import { groupParagraphs, parseParagraphs } from "./paragraphParser";
 import { splitSentences } from "./sentenceSplitter";
 
 function sentencesOf(source: string): string[] {
@@ -8,10 +8,10 @@ function sentencesOf(source: string): string[] {
 	return splitSentences(paragraphs[0]!).map((s) => s.text);
 }
 
-// Builds a single coalesced paragraph (which carries blank-line gaps) and
-// returns its sentences.
+// Builds a single merged group (which carries blank-line gaps) and returns its
+// sentences. The large cap keeps these small test inputs in one group.
 function coalescedSentencesOf(source: string): string[] {
-	const paragraphs = coalesceShortParagraphs(parseParagraphs(source));
+	const paragraphs = groupParagraphs(parseParagraphs(source), 0, 100_000);
 	expect(paragraphs.length).toBe(1);
 	return splitSentences(paragraphs[0]!).map((s) => s.text.trim());
 }

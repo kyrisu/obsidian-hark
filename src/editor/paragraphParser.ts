@@ -1,13 +1,27 @@
 import type { Paragraph } from "../types";
 import { stripMarkdown } from "./markdownStripper";
 
-// A paragraph whose stripped text is shorter than this (a heading or a sentence
-// or two) yields audio too brief to cover the synthesis latency of the next
-// paragraph, so playback stalls at the seam. Such paragraphs are merged forward
-// into the following one so each synthesis unit is long enough. Tunable.
-export const SHORT_PARAGRAPH_CHAR_LIMIT = 160;
+// The first group of a playback run blocks playback until synthesised —
+// prefetch cannot hide it. Cap it small for a fast cold start; later groups
+// use the model's full maxRequestBytes.
+export const FIRST_GROUP_MAX_BYTES = 1200;
+
+// A size-forced cut is placed on an internal heading only if the group before
+// it is at least this long; otherwise the cut falls on the last paragraph
+// boundary. Prevents emitting a clip too short to mask the next group's
+// synthesis latency.
+export const MIN_GROUP_CHARS = 160;
 
 const PARAGRAPH_GAP = "\n\n";
+
+// An ATX heading: 0-3 leading spaces, 1-6 `#`, then a space or end-of-line. The
+// trailing space (or EOL) is what distinguishes `# Heading` from a `#tag`.
+const ATX_HEADING = /^ {0,3}(#{1,6})(?: |$)/;
+
+function headingLevelOf(line: string): number {
+	const m = ATX_HEADING.exec(line);
+	return m ? m[1]!.length : 0;
+}
 
 export function parseParagraphs(source: string): Paragraph[] {
 	const result: Paragraph[] = [];
@@ -25,7 +39,14 @@ export function parseParagraphs(source: string): Paragraph[] {
 		}
 
 		const start = i;
-		i = collectParagraphEnd(source, i);
+		const firstLineEnd = source.indexOf("\n", start);
+		const firstLine = firstLineEnd === -1 ? source.slice(start) : source.slice(start, firstLineEnd);
+		const headingLevel = headingLevelOf(firstLine);
+		if (headingLevel > 0) {
+			i = firstLineEnd === -1 ? source.length : firstLineEnd + 1;
+		} else {
+			i = collectParagraphEnd(source, start);
+		}
 		const end = i;
 
 		const sourceText = source.slice(start, end);
@@ -41,34 +62,61 @@ export function parseParagraphs(source: string): Paragraph[] {
 			strippedText,
 			strippedToSource,
 			byteLength,
+			headingLevel,
 		});
 	}
 
 	return result;
 }
 
-// Merges short paragraphs forward into the next so each playback unit produces
-// enough audio to mask the synthesis latency of whatever follows. Chains while
-// the accumulated text is still short; a short trailing paragraph with nothing
-// after it is left as-is. Indices are reassigned to stay contiguous.
-export function coalesceShortParagraphs(paragraphs: Paragraph[]): Paragraph[] {
+// Partitions paragraphs into heading-anchored, size-bounded synthesis groups,
+// starting at startIdx. Paragraphs before startIdx are dropped (not played).
+// Each emitted group is merged into one Paragraph; indices are reassigned.
+export function groupParagraphs(
+	paragraphs: Paragraph[],
+	startIdx: number,
+	maxRequestBytes: number,
+): Paragraph[] {
 	const out: Paragraph[] = [];
-	let i = 0;
+	let i = Math.max(0, startIdx);
+
 	while (i < paragraphs.length) {
-		let merged = paragraphs[i]!;
-		let next = i + 1;
-		while (isShortParagraph(merged) && next < paragraphs.length) {
-			merged = mergeParagraphs(merged, paragraphs[next]!);
-			next++;
+		const cap = out.length === 0 ? FIRST_GROUP_MAX_BYTES : maxRequestBytes;
+
+		// Accumulate the maximal run of whole paragraphs that fits the cap.
+		const members: Paragraph[] = [paragraphs[i]!];
+		let bytes = paragraphs[i]!.byteLength;
+		let j = i + 1;
+		while (j < paragraphs.length) {
+			const next = bytes + PARAGRAPH_GAP.length + paragraphs[j]!.byteLength;
+			if (next > cap) break;
+			members.push(paragraphs[j]!);
+			bytes = next;
+			j++;
 		}
-		out.push({ ...merged, index: out.length });
-		i = next;
+
+		// Decide the cut: prefer the most-recent internal heading, else take all.
+		let cut = members.length;
+		for (let k = members.length - 1; k >= 1; k--) {
+			if (members[k]!.headingLevel > 0) {
+				const prefixChars = members
+					.slice(0, k)
+					.reduce((n, p) => n + p.strippedText.trim().length, 0);
+				if (prefixChars >= MIN_GROUP_CHARS) cut = k;
+				break; // only the most-recent heading is considered
+			}
+		}
+
+		const group = members.slice(0, cut);
+		out.push({ ...mergeAll(group), index: out.length });
+		i += cut;
 	}
+
 	return out;
 }
 
-function isShortParagraph(p: Paragraph): boolean {
-	return p.strippedText.trim().length < SHORT_PARAGRAPH_CHAR_LIMIT;
+function mergeAll(group: Paragraph[]): Paragraph {
+	return group.reduce((acc, p) => mergeParagraphs(acc, p));
 }
 
 function mergeParagraphs(a: Paragraph, b: Paragraph): Paragraph {
@@ -92,6 +140,7 @@ function mergeParagraphs(a: Paragraph, b: Paragraph): Paragraph {
 		strippedText,
 		strippedToSource,
 		byteLength: new TextEncoder().encode(strippedText).byteLength,
+		headingLevel: a.headingLevel,
 	};
 }
 
@@ -160,6 +209,8 @@ function collectParagraphEnd(source: string, start: number): number {
 		const nextLine =
 			nextLineEnd === -1 ? source.slice(nextLineStart) : source.slice(nextLineStart, nextLineEnd);
 		if (nextLine.trim() === "") return lineEnd + 1;
+		// A heading always begins a fresh paragraph, even with no blank line before it.
+		if (headingLevelOf(nextLine) > 0) return lineEnd + 1;
 
 		i = lineEnd + 1;
 	}

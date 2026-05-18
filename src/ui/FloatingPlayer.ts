@@ -49,13 +49,13 @@ export class FloatingPlayer {
 
 		const controls = this.root.createEl("div", { cls: "tts-floating-player__controls" });
 
-		this.makeButton(controls, "skip-back", "Previous paragraph", () =>
+		this.makeButton(controls, "skip-back", "Previous section", () =>
 			this.options.onSkipPrevious(),
 		);
 		this.playPauseBtn = this.makeButton(controls, "play", "Play / pause", () =>
 			this.options.onPlayPause(),
 		);
-		this.makeButton(controls, "skip-forward", "Next paragraph", () => this.options.onSkipNext());
+		this.makeButton(controls, "skip-forward", "Next section", () => this.options.onSkipNext());
 		this.makeButton(controls, "square", "Stop", () => this.options.onStop());
 
 		this.paraIndicator = controls.createEl("span", {

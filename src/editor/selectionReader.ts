@@ -37,6 +37,7 @@ export function paragraphsFromSelection(
 			strippedText,
 			strippedToSource,
 			byteLength,
+			headingLevel: p.headingLevel,
 		});
 	}
 

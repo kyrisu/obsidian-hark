@@ -133,7 +133,7 @@ export class ReadAloudSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Auto-advance")
-			.setDesc("Continue to the next paragraph automatically.")
+			.setDesc("Continue to the next section automatically.")
 			.addToggle((t) =>
 				t.setValue(this.plugin.settings.autoAdvance).onChange(async (value) => {
 					this.plugin.settings.autoAdvance = value;

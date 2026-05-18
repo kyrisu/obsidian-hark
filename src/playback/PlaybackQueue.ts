@@ -1,6 +1,6 @@
 import type { Paragraph, SynthResult } from "../types";
 import { Synthesizer } from "../tts/Synthesizer";
-import { MAX_REQUEST_BYTES, RequestAbortedError } from "../tts/GeminiTtsClient";
+import { ACTIVE_TTS_MODEL, RequestAbortedError } from "../tts/GeminiTtsClient";
 import type { Player } from "./Player";
 
 export type QueueState = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
@@ -197,7 +197,7 @@ export class PlaybackQueue {
 		paragraph: Paragraph,
 		signal: AbortSignal,
 	): Promise<SynthResult[]> {
-		if (paragraph.byteLength > MAX_REQUEST_BYTES) {
+		if (paragraph.byteLength > ACTIVE_TTS_MODEL.maxRequestBytes) {
 			return this.synthesizer.synthesizeChunked(paragraph, this.voiceId, signal);
 		}
 		const single = await this.synthesizer.synthesize(paragraph, this.voiceId, signal);

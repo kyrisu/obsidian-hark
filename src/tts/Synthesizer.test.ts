@@ -25,6 +25,7 @@ function identityParagraph(text: string): Paragraph {
 		strippedText: text,
 		strippedToSource: map,
 		byteLength: new TextEncoder().encode(text).byteLength,
+		headingLevel: 0,
 	};
 }
 
@@ -121,6 +122,7 @@ describe("binPackSentences", () => {
 			strippedText,
 			strippedToSource,
 			byteLength: strippedText.length,
+			headingLevel: 0,
 		};
 		const long = sentence({
 			text: strippedText,

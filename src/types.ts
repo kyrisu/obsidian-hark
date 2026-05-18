@@ -14,6 +14,12 @@ export interface Paragraph {
 	strippedText: string;
 	strippedToSource: Uint32Array;
 	byteLength: number;
+	headingLevel: number; // 0 = not a heading, 1-6 = ATX heading level
+}
+
+export interface TtsModel {
+	id: string;
+	maxRequestBytes: number;
 }
 
 export interface SynthResult {

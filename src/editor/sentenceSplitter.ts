@@ -44,8 +44,8 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 		const ch = text.charAt(i);
 
 		// A blank line is a hard sentence boundary. It only ever appears here in
-		// a paragraph coalesced from short ones (see coalesceShortParagraphs), so
-		// the heading/sentence it joined stays a distinct sentence for highlight
+		// a paragraph merged from several (see groupParagraphs), so the
+		// heading/sentence it joined stays a distinct sentence for highlight
 		// and timing. A single newline (soft-wrapped line) is not a boundary.
 		if (ch === "\n" && text.charAt(i + 1) === "\n") {
 			let q = i;

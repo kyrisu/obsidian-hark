@@ -42,14 +42,14 @@ export function registerCommands(plugin: ReadAloudPlugin): void {
 	});
 	plugin.addCommand({
 		id: "next-paragraph",
-		name: "Skip to next paragraph",
+		name: "Skip to next section",
 		callback: () => {
 			void plugin.playbackQueue?.skipNext();
 		},
 	});
 	plugin.addCommand({
 		id: "previous-paragraph",
-		name: "Go back one paragraph",
+		name: "Go back one section",
 		callback: () => {
 			void plugin.playbackQueue?.skipPrevious();
 		},

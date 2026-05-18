@@ -7,8 +7,9 @@ import {
 	PluginSettings,
 } from "./types";
 import { ReadAloudSettingTab } from "./settings";
-import { coalesceShortParagraphs, parseParagraphs } from "./editor/paragraphParser";
+import { groupParagraphs, parseParagraphs } from "./editor/paragraphParser";
 import { paragraphsFromSelection } from "./editor/selectionReader";
+import { ACTIVE_TTS_MODEL } from "./tts/GeminiTtsClient";
 import {
 	activeEditorView,
 	applyHighlight,
@@ -166,14 +167,13 @@ export default class ReadAloudPlugin extends Plugin {
 
 	async startPlaybackFromSelection(editor: Editor): Promise<void> {
 		const documentParagraphs = parseParagraphs(editor.getValue());
-		const selected = coalesceShortParagraphs(
-			paragraphsFromSelection(editor, documentParagraphs),
-		);
+		const selected = paragraphsFromSelection(editor, documentParagraphs);
 		if (selected.length === 0) {
 			new Notice("Make a selection to read aloud.");
 			return;
 		}
-		await this.startPlayback(selected, 0);
+		const groups = groupParagraphs(selected, 0, ACTIVE_TTS_MODEL.maxRequestBytes);
+		await this.startPlayback(groups);
 	}
 
 	bumpRate(delta: number): void {
@@ -192,22 +192,27 @@ export default class ReadAloudPlugin extends Plugin {
 		editor: Editor,
 		pickStart: (paragraphs: Paragraph[]) => number,
 	): Promise<void> {
-		const paragraphs = coalesceShortParagraphs(parseParagraphs(editor.getValue()));
+		const paragraphs = parseParagraphs(editor.getValue());
 		if (paragraphs.length === 0) {
 			new Notice("Note has no readable paragraphs.");
 			return;
 		}
-		await this.startPlayback(paragraphs, pickStart(paragraphs));
+		const groups = groupParagraphs(
+			paragraphs,
+			pickStart(paragraphs),
+			ACTIVE_TTS_MODEL.maxRequestBytes,
+		);
+		await this.startPlayback(groups);
 	}
 
-	private async startPlayback(paragraphs: Paragraph[], startIdx: number): Promise<void> {
+	private async startPlayback(paragraphs: Paragraph[]): Promise<void> {
 		const voiceId = this.settings.voiceId;
 		if (!voiceId) {
 			new Notice("Set a voice in plugin settings before playback.");
 			return;
 		}
 		this.playbackQueue?.stop();
-		this.floatingPlayer?.setParagraphIndex(startIdx, paragraphs.length);
+		this.floatingPlayer?.setParagraphIndex(0, paragraphs.length);
 		this.floatingPlayer?.setRate(this.settings.playbackRate);
 		this.playbackQueue = new PlaybackQueue(paragraphs, voiceId, this.synthesizer, this.player, {
 			prefetchLookahead: this.settings.prefetchLookahead,
@@ -228,7 +233,7 @@ export default class ReadAloudPlugin extends Plugin {
 				if (v) applyHighlight(v, null, false);
 			},
 		});
-		await this.playbackQueue.play(startIdx);
+		await this.playbackQueue.play(0);
 	}
 
 	private handleQueueState(state: QueueState): void {

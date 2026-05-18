@@ -1,13 +1,16 @@
 import { requestUrl, type RequestUrlParam, type RequestUrlResponse } from "obsidian";
+import type { TtsModel } from "../types";
 import { pcmDurationSec, pcmToWav } from "./wav";
 
 const ENDPOINT_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-export const GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
-// Not an API hard limit — the Gemini Developer API is token-bounded and far
-// larger. This is the byte threshold at which the synthesizer splits an
-// oversize paragraph at sentence boundaries.
-export const MAX_REQUEST_BYTES = 5000;
+export const ACTIVE_TTS_MODEL: TtsModel = {
+	id: "gemini-2.5-flash-preview-tts",
+	// Chosen group/request size cap. Far below the model's 32k-token context
+	// window; sized for tolerable cold-start latency and skip/edit granularity,
+	// not for an API limit. See the heading-anchored-chunking plan.
+	maxRequestBytes: 4000,
+};
 
 const DEFAULT_SAMPLE_RATE = 24000;
 const PCM_CHANNELS = 1;
@@ -36,7 +39,9 @@ export class GeminiTtsError extends Error {
 
 export class RequestTooLargeError extends GeminiTtsError {
 	constructor(byteLength: number) {
-		super(`Paragraph is ${byteLength} bytes, over the ${MAX_REQUEST_BYTES}-byte per-request cap.`);
+		super(
+			`Paragraph is ${byteLength} bytes, over the ${ACTIVE_TTS_MODEL.maxRequestBytes}-byte per-request cap.`,
+		);
 		this.name = "RequestTooLargeError";
 	}
 }
@@ -68,7 +73,7 @@ interface GenerateContentResponse {
 
 export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechResult> {
 	const byteLength = new TextEncoder().encode(req.text).byteLength;
-	if (byteLength > MAX_REQUEST_BYTES) throw new RequestTooLargeError(byteLength);
+	if (byteLength > ACTIVE_TTS_MODEL.maxRequestBytes) throw new RequestTooLargeError(byteLength);
 	if (req.signal?.aborted) throw new RequestAbortedError();
 
 	const body = JSON.stringify({
@@ -82,7 +87,7 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 	});
 
 	const params: RequestUrlParam = {
-		url: `${ENDPOINT_BASE}/${GEMINI_TTS_MODEL}:generateContent`,
+		url: `${ENDPOINT_BASE}/${ACTIVE_TTS_MODEL.id}:generateContent`,
 		method: "POST",
 		contentType: "application/json",
 		headers: { "x-goog-api-key": req.apiKey },
