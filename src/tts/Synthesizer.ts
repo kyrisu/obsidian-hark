@@ -12,6 +12,7 @@ import {
 	type SpeechResult,
 } from "./GeminiTtsClient";
 import type { Cache } from "./Cache";
+import { anchorSentenceTimings } from "./silenceAnchor";
 
 type SynthesizeFn = (req: GeminiTtsRequest) => Promise<SpeechResult>;
 
@@ -97,10 +98,15 @@ export class Synthesizer {
 		const apiKey = await this.getGoogleKey();
 		if (!apiKey) throw new GeminiTtsError("Google API key is not configured.");
 
-		const { audio, durationSec } = await this.synthesizeSpeech({ text, voiceId, apiKey, signal });
+		const { audio, durationSec, pcm, sampleRate } = await this.synthesizeSpeech({
+			text,
+			voiceId,
+			apiKey,
+			signal,
+		});
 		if (signal?.aborted) throw new RequestAbortedError();
 
-		const timings = distributeSentenceTimings(sentences, durationSec);
+		const timings = anchorSentenceTimings(sentences, durationSec, pcm, sampleRate);
 
 		const result: SynthResult = { audio, audioDurationSec: durationSec, sentences: timings };
 		await this.cache.put(hash, text.slice(0, 80), result);

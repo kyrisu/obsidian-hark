@@ -25,6 +25,8 @@ export interface GeminiTtsRequest {
 export interface SpeechResult {
 	audio: ArrayBuffer; // WAV-wrapped PCM
 	durationSec: number;
+	pcm: ArrayBuffer; // raw little-endian 16-bit PCM, pre-WAV-wrap
+	sampleRate: number;
 }
 
 export class GeminiTtsError extends Error {
@@ -138,6 +140,8 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 	return {
 		audio: pcmToWav(pcm, sampleRate, PCM_CHANNELS),
 		durationSec: pcmDurationSec(pcm.byteLength, sampleRate, PCM_CHANNELS),
+		pcm,
+		sampleRate,
 	};
 }
 
