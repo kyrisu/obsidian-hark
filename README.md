@@ -9,12 +9,11 @@
 
 Read your markdown notes aloud in Obsidian using Google's **Gemini 2.5
 Flash TTS**. The currently-spoken sentence is highlighted in Live Preview and
-Source mode, with a sub-cursor that scans across the words to approximate
-word-level position. Audio is cached locally, so re-listening to a note costs
-nothing.
+Source mode as playback advances. Audio is cached locally, so re-listening to a
+note costs nothing.
 
-<!-- TODO: add one screenshot or GIF showing the floating mini-player, the
-     sentence highlight, and the sub-cursor in Live Preview. -->
+<!-- TODO: add one screenshot or GIF showing the floating mini-player and the
+     sentence highlight in Live Preview. -->
 
 ## Requirements
 
@@ -118,10 +117,12 @@ command.
   Languages that do not end sentences with `.`, `!`, or `?` (such as Chinese or
   Japanese) still play correctly, but the highlight treats the whole paragraph
   as a single block.
-- **Sentence-level highlight only.** The sub-cursor that scans within a sentence
-  is interpolated from the sentence's duration, not measured — it can drift from
-  the audible word on sentences with unusual rhythm. The sentence box itself
-  stays correct. Measured word-level timing is the headline v1.1 feature.
+- **Sentence-level highlight only.** Playback highlights the whole current
+  sentence, not individual words, because Gemini returns no word-level
+  timestamps. Sentence boundaries are anchored to pauses detected in the audio,
+  so on dense passages the highlight can run ahead by under a second before the
+  next boundary realigns it. Measured word-level timing is the headline v1.1
+  feature.
 - **Reading mode plays audio but does not highlight.** The highlight is a Live
   Preview / Source mode feature in v1.0.
 - **Mobile loads but is not actively tested** in v1.0.
