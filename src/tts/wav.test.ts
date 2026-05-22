@@ -3,7 +3,8 @@ import { pcmDurationSec, pcmToWav } from "./wav";
 
 function ascii(view: DataView, offset: number, len: number): string {
 	let s = "";
-	for (let i = 0; i < len; i++) s += String.fromCharCode(view.getUint8(offset + i));
+	for (let i = 0; i < len; i++)
+		s += String.fromCharCode(view.getUint8(offset + i));
 	return s;
 }
 

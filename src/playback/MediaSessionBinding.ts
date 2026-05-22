@@ -53,7 +53,9 @@ export function attachMediaSession(handlers: MediaSessionHandlers): () => void {
 	};
 }
 
-export function setNowPlaying(meta: { title: string; artist: string } | null): void {
+export function setNowPlaying(
+	meta: { title: string; artist: string } | null,
+): void {
 	const ms = mediaSession();
 	if (!ms) return;
 	if (!meta) {

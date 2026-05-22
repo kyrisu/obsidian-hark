@@ -1,5 +1,10 @@
 import type { DataAdapter } from "obsidian";
-import type { CacheEntry, CacheIndex, SentenceTiming, SynthResult } from "../types";
+import type {
+	CacheEntry,
+	CacheIndex,
+	SentenceTiming,
+	SynthResult,
+} from "../types";
 
 const CACHE_DIR = ".hark-cache";
 const INDEX_FILE = `${CACHE_DIR}/index.json`;
@@ -35,7 +40,10 @@ export class Cache {
 
 		const audioPath = this.audioPath(hash);
 		const timingsPath = this.timingsPath(hash);
-		if (!(await this.adapter.exists(audioPath)) || !(await this.adapter.exists(timingsPath))) {
+		if (
+			!(await this.adapter.exists(audioPath)) ||
+			!(await this.adapter.exists(timingsPath))
+		) {
 			this.dropEntry(hash);
 			this.scheduleFlush();
 			return null;
@@ -54,12 +62,20 @@ export class Cache {
 		return { audio, audioDurationSec, sentences };
 	}
 
-	async put(hash: string, snippet: string, result: SynthResult): Promise<void> {
-		await (this.writeQueue = this.writeQueue.then(() => this.putInternal(hash, snippet, result)));
+	async put(
+		hash: string,
+		snippet: string,
+		result: SynthResult,
+	): Promise<void> {
+		await (this.writeQueue = this.writeQueue.then(() =>
+			this.putInternal(hash, snippet, result),
+		));
 	}
 
 	async clear(): Promise<void> {
-		await (this.writeQueue = this.writeQueue.then(() => this.clearInternal()));
+		await (this.writeQueue = this.writeQueue.then(() =>
+			this.clearInternal(),
+		));
 	}
 
 	async size(): Promise<number> {
@@ -71,10 +87,16 @@ export class Cache {
 	}
 
 	async entries(): Promise<CacheEntry[]> {
-		return this.index.entries.slice().sort((a, b) => b.lastAccessedMs - a.lastAccessedMs);
+		return this.index.entries
+			.slice()
+			.sort((a, b) => b.lastAccessedMs - a.lastAccessedMs);
 	}
 
-	private async putInternal(hash: string, snippet: string, result: SynthResult): Promise<void> {
+	private async putInternal(
+		hash: string,
+		snippet: string,
+		result: SynthResult,
+	): Promise<void> {
 		const audioPath = this.audioPath(hash);
 		const timingsPath = this.timingsPath(hash);
 		await this.adapter.writeBinary(audioPath, result.audio);
@@ -116,7 +138,9 @@ export class Cache {
 
 	private async evictIfNeeded(): Promise<void> {
 		if (this.index.totalBytes <= this.cacheMaxBytes) return;
-		const sorted = this.index.entries.slice().sort((a, b) => a.lastAccessedMs - b.lastAccessedMs);
+		const sorted = this.index.entries
+			.slice()
+			.sort((a, b) => a.lastAccessedMs - b.lastAccessedMs);
 		for (const entry of sorted) {
 			if (this.index.totalBytes <= this.cacheMaxBytes) break;
 			this.dropEntry(entry.hash);
@@ -144,7 +168,11 @@ export class Cache {
 	}
 
 	private adoptIndex(idx: CacheIndex): void {
-		this.index = { version: 1, entries: idx.entries.slice(), totalBytes: idx.totalBytes };
+		this.index = {
+			version: 1,
+			entries: idx.entries.slice(),
+			totalBytes: idx.totalBytes,
+		};
 		this.byHash.clear();
 		for (const e of this.index.entries) this.byHash.set(e.hash, e);
 	}
@@ -160,7 +188,8 @@ export class Cache {
 		try {
 			const raw = await this.adapter.read(INDEX_FILE);
 			const parsed = JSON.parse(raw) as Partial<CacheIndex>;
-			if (parsed.version !== 1 || !Array.isArray(parsed.entries)) return null;
+			if (parsed.version !== 1 || !Array.isArray(parsed.entries))
+				return null;
 			const entries = parsed.entries.filter(
 				(e): e is CacheEntry =>
 					typeof e?.hash === "string" &&
@@ -204,21 +233,33 @@ export class Cache {
 	private scheduleFlush(): void {
 		if (this.flushHandle !== null) return;
 		const w = globalThis as unknown as {
-			requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+			requestIdleCallback?: (
+				cb: () => void,
+				opts?: { timeout: number },
+			) => number;
 		};
 		if (typeof w.requestIdleCallback === "function") {
-			this.flushHandle = w.requestIdleCallback(() => this.runScheduledFlush(), {
-				timeout: FLUSH_DELAY_MS,
-			});
+			this.flushHandle = w.requestIdleCallback(
+				() => this.runScheduledFlush(),
+				{
+					timeout: FLUSH_DELAY_MS,
+				},
+			);
 		} else {
-			this.flushHandle = window.setTimeout(() => this.runScheduledFlush(), FLUSH_DELAY_MS);
+			this.flushHandle = window.setTimeout(
+				() => this.runScheduledFlush(),
+				FLUSH_DELAY_MS,
+			);
 		}
 	}
 
 	private cancelFlush(): void {
 		if (this.flushHandle === null) return;
-		const w = globalThis as unknown as { cancelIdleCallback?: (h: number) => void };
-		if (typeof w.cancelIdleCallback === "function") w.cancelIdleCallback(this.flushHandle);
+		const w = globalThis as unknown as {
+			cancelIdleCallback?: (h: number) => void;
+		};
+		if (typeof w.cancelIdleCallback === "function")
+			w.cancelIdleCallback(this.flushHandle);
 		else window.clearTimeout(this.flushHandle);
 		this.flushHandle = null;
 	}

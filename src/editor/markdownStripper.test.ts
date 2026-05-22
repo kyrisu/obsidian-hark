@@ -57,7 +57,9 @@ describe("stripMarkdown", () => {
 	it("keeps the display alias of a piped wikilink", () => {
 		const { strippedText, strippedToSource } = strip("[[target|display]]");
 		expect(strippedText).toBe("display");
-		expect(Array.from(strippedToSource)).toEqual([9, 10, 11, 12, 13, 14, 15]);
+		expect(Array.from(strippedToSource)).toEqual([
+			9, 10, 11, 12, 13, 14, 15,
+		]);
 	});
 
 	it("strips a blockquote marker", () => {
@@ -112,9 +114,13 @@ describe("stripMarkdown", () => {
 	});
 
 	it("preserves the round-trip property on mixed inline syntax", () => {
-		const { strippedText, strippedToSource } = strip("**Hello** [there](url)");
+		const { strippedText, strippedToSource } = strip(
+			"**Hello** [there](url)",
+		);
 		expect(strippedText).toBe("Hello there");
-		expect(Array.from(strippedToSource)).toEqual([2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15]);
+		expect(Array.from(strippedToSource)).toEqual([
+			2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15,
+		]);
 	});
 
 	it("recursively strips nested emphasis inside a link", () => {

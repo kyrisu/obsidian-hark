@@ -137,7 +137,12 @@ export function stripMarkdown(source: string, sourceBase: number): StripResult {
 
 		if (c === "$" && i + 1 < source.length) {
 			const next = source.charAt(i + 1);
-			if (next !== " " && next !== "\n" && next !== "\t" && next !== "$") {
+			if (
+				next !== " " &&
+				next !== "\n" &&
+				next !== "\t" &&
+				next !== "$"
+			) {
 				let q = i + 1;
 				let found = -1;
 				while (q < source.length && source.charAt(q) !== "\n") {
@@ -208,8 +213,14 @@ function consumeLineStart(source: string, i: number): number {
 			q++;
 			hashCount++;
 		}
-		if (q < source.length && (source.charAt(q) === " " || source.charAt(q) === "\t")) {
-			while (q < source.length && (source.charAt(q) === " " || source.charAt(q) === "\t")) {
+		if (
+			q < source.length &&
+			(source.charAt(q) === " " || source.charAt(q) === "\t")
+		) {
+			while (
+				q < source.length &&
+				(source.charAt(q) === " " || source.charAt(q) === "\t")
+			) {
 				q++;
 			}
 			return q - i;
@@ -224,7 +235,10 @@ function consumeLineStart(source: string, i: number): number {
 	}
 
 	const marker = source.charAt(p);
-	if ((marker === "-" || marker === "*" || marker === "+") && source.charAt(p + 1) === " ") {
+	if (
+		(marker === "-" || marker === "*" || marker === "+") &&
+		source.charAt(p + 1) === " "
+	) {
 		return p + 2 - i;
 	}
 

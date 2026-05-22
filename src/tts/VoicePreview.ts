@@ -14,8 +14,13 @@ export class VoicePreview {
 		let blob = this.blobs.get(voiceId);
 		if (!blob) {
 			const apiKey = await this.getGoogleKey();
-			if (!apiKey) throw new GeminiTtsError("Set your Gemini API key first.");
-			const { audio } = await synthesizeSpeech({ text: PREVIEW_PHRASE, voiceId, apiKey });
+			if (!apiKey)
+				throw new GeminiTtsError("Set your Gemini API key first.");
+			const { audio } = await synthesizeSpeech({
+				text: PREVIEW_PHRASE,
+				voiceId,
+				apiKey,
+			});
 			blob = new Blob([audio], { type: "audio/wav" });
 			this.blobs.set(voiceId, blob);
 		}

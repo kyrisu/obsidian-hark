@@ -33,7 +33,8 @@ export class StatusBar {
 	}
 
 	private handleClick = (): void => {
-		if (this.state === "playing" || this.state === "paused") this.onToggle();
+		if (this.state === "playing" || this.state === "paused")
+			this.onToggle();
 	};
 
 	private render(): void {

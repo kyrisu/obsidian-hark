@@ -1,4 +1,8 @@
-import { requestUrl, type RequestUrlParam, type RequestUrlResponse } from "obsidian";
+import {
+	requestUrl,
+	type RequestUrlParam,
+	type RequestUrlResponse,
+} from "obsidian";
 import type { TtsModel } from "../types";
 import { pcmDurationSec, pcmToWav } from "./wav";
 
@@ -73,9 +77,12 @@ interface GenerateContentResponse {
 	};
 }
 
-export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechResult> {
+export async function synthesizeSpeech(
+	req: GeminiTtsRequest,
+): Promise<SpeechResult> {
 	const byteLength = new TextEncoder().encode(req.text).byteLength;
-	if (byteLength > ACTIVE_TTS_MODEL.maxRequestBytes) throw new RequestTooLargeError(byteLength);
+	if (byteLength > ACTIVE_TTS_MODEL.maxRequestBytes)
+		throw new RequestTooLargeError(byteLength);
 	if (req.signal?.aborted) throw new RequestAbortedError();
 
 	const body = JSON.stringify({
@@ -83,7 +90,9 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 		generationConfig: {
 			responseModalities: ["AUDIO"],
 			speechConfig: {
-				voiceConfig: { prebuiltVoiceConfig: { voiceName: req.voiceId } },
+				voiceConfig: {
+					prebuiltVoiceConfig: { voiceName: req.voiceId },
+				},
 			},
 		},
 	});
@@ -118,7 +127,10 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 		);
 	}
 	if (resp.status < 200 || resp.status >= 300) {
-		throw new GeminiTtsError(`Gemini TTS request failed with status ${resp.status}.`, resp.status);
+		throw new GeminiTtsError(
+			`Gemini TTS request failed with status ${resp.status}.`,
+			resp.status,
+		);
 	}
 
 	const candidate = parsed.candidates?.[0];
@@ -127,7 +139,9 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 		throw new GeminiTtsError(`Gemini TTS stopped early (${finishReason}).`);
 	}
 
-	const inlineData = candidate?.content?.parts?.find((p) => p.inlineData)?.inlineData;
+	const inlineData = candidate?.content?.parts?.find(
+		(p) => p.inlineData,
+	)?.inlineData;
 	if (!inlineData?.data) {
 		throw new GeminiTtsError("Gemini TTS returned no audio data.");
 	}
@@ -136,7 +150,8 @@ export async function synthesizeSpeech(req: GeminiTtsRequest): Promise<SpeechRes
 	// TTS emits little-endian PCM — verified empirically. WAV PCM is little-endian,
 	// so the bytes copy through unchanged.
 	const pcm = decodeBase64(inlineData.data);
-	const sampleRate = parseSampleRate(inlineData.mimeType) ?? DEFAULT_SAMPLE_RATE;
+	const sampleRate =
+		parseSampleRate(inlineData.mimeType) ?? DEFAULT_SAMPLE_RATE;
 	return {
 		audio: pcmToWav(pcm, sampleRate, PCM_CHANNELS),
 		durationSec: pcmDurationSec(pcm.byteLength, sampleRate, PCM_CHANNELS),
@@ -167,14 +182,20 @@ export async function validateApiKey(
 	} catch (err) {
 		console.error("[Hark] API key validation could not reach Google:", err);
 		const detail = err instanceof Error ? err.message : String(err);
-		return { ok: false, message: `Could not reach the Gemini API: ${detail}` };
+		return {
+			ok: false,
+			message: `Could not reach the Gemini API: ${detail}`,
+		};
 	}
 
 	if (resp.status >= 200 && resp.status < 300) {
 		return { ok: true, message: "API key is valid." };
 	}
 
-	console.error(`[Hark] API key validation failed (HTTP ${resp.status}):`, resp.text);
+	console.error(
+		`[Hark] API key validation failed (HTTP ${resp.status}):`,
+		resp.text,
+	);
 	let message = describeUpstreamError(resp.status, resp.text);
 	if (!looksLikeGoogleApiKey(key)) {
 		message +=
@@ -202,13 +223,18 @@ function describeUpstreamError(status: number, rawBody: string): string {
 			: `Validation failed (HTTP ${status}).`;
 	}
 	const reason = err.details?.find((d) => d.reason)?.reason;
-	const tags = [err.status, reason, `HTTP ${status}`].filter(Boolean).join(", ");
+	const tags = [err.status, reason, `HTTP ${status}`]
+		.filter(Boolean)
+		.join(", ");
 	const base = err.message ?? `Request failed with HTTP ${status}`;
 	const hint = hintForUpstreamError(reason, status);
 	return hint ? `${base} (${tags}) — ${hint}` : `${base} (${tags})`;
 }
 
-function hintForUpstreamError(reason: string | undefined, status: number): string {
+function hintForUpstreamError(
+	reason: string | undefined,
+	status: number,
+): string {
 	switch (reason) {
 		case "API_KEY_INVALID":
 			return "Check for a typo or stray characters, and confirm the key was created at aistudio.google.com/apikey.";
@@ -221,8 +247,10 @@ function hintForUpstreamError(reason: string | undefined, status: number): strin
 		case "API_KEY_IOS_APP_BLOCKED":
 			return "This key has application restrictions that block the request. Use a key with no application restrictions.";
 		default:
-			if (status === 403) return "The key was recognised but lacks permission for the Gemini API.";
-			if (status === 429) return "Rate or quota limit reached — wait a moment and try again.";
+			if (status === 403)
+				return "The key was recognised but lacks permission for the Gemini API.";
+			if (status === 429)
+				return "Rate or quota limit reached — wait a moment and try again.";
 			return "";
 	}
 }

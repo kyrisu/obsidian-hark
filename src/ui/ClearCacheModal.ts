@@ -16,7 +16,9 @@ export class ClearCacheModal extends Modal {
 			text: `This deletes all cached audio (${formatBytes(this.sizeBytes)}). Notes will re-synthesise from the API on the next playback.`,
 		});
 		new Setting(this.contentEl)
-			.addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()))
+			.addButton((b) =>
+				b.setButtonText("Cancel").onClick(() => this.close()),
+			)
 			.addButton((b) =>
 				b
 					.setButtonText(`Clear (${formatBytes(this.sizeBytes)})`)

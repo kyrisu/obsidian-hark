@@ -3,7 +3,13 @@ import { Synthesizer } from "../tts/Synthesizer";
 import { ACTIVE_TTS_MODEL, RequestAbortedError } from "../tts/GeminiTtsClient";
 import type { Player } from "./Player";
 
-export type QueueState = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
+export type QueueState =
+	| "idle"
+	| "loading"
+	| "playing"
+	| "paused"
+	| "ended"
+	| "error";
 
 interface PrefetchEntry {
 	controller: AbortController;
@@ -33,7 +39,11 @@ export class PlaybackQueue {
 		private readonly options: PlaybackQueueOptions,
 	) {}
 
-	applySettings(next: { voiceId: string; prefetchLookahead: number; autoAdvance: boolean }): void {
+	applySettings(next: {
+		voiceId: string;
+		prefetchLookahead: number;
+		autoAdvance: boolean;
+	}): void {
 		this.options.prefetchLookahead = next.prefetchLookahead;
 		this.options.autoAdvance = next.autoAdvance;
 		if (next.voiceId === this.voiceId) return;
@@ -51,7 +61,8 @@ export class PlaybackQueue {
 	}
 
 	async play(fromParagraphIdx: number): Promise<void> {
-		if (fromParagraphIdx < 0 || fromParagraphIdx >= this.paragraphs.length) return;
+		if (fromParagraphIdx < 0 || fromParagraphIdx >= this.paragraphs.length)
+			return;
 		this.cursor = { paragraphIdx: fromParagraphIdx, subChunkIdx: 0 };
 		this.setState("loading");
 		await this.playCurrent();
@@ -122,7 +133,8 @@ export class PlaybackQueue {
 		const out: { index: number; from: number; to: number }[] = [];
 		for (const idx of this.prefetch.keys()) {
 			const p = this.paragraphs[idx];
-			if (p) out.push({ index: idx, from: p.sourceStart, to: p.sourceEnd });
+			if (p)
+				out.push({ index: idx, from: p.sourceStart, to: p.sourceEnd });
 		}
 		return out;
 	}
@@ -144,7 +156,8 @@ export class PlaybackQueue {
 		const { paragraphIdx, subChunkIdx } = this.cursor;
 		try {
 			const chunks = await this.ensureChunksFor(paragraphIdx);
-			if (!this.cursor || this.cursor.paragraphIdx !== paragraphIdx) return;
+			if (!this.cursor || this.cursor.paragraphIdx !== paragraphIdx)
+				return;
 			const chunk = chunks[subChunkIdx];
 			if (!chunk) {
 				await this.advance();
@@ -162,7 +175,9 @@ export class PlaybackQueue {
 		}
 	}
 
-	private async ensureChunksFor(paragraphIdx: number): Promise<SynthResult[]> {
+	private async ensureChunksFor(
+		paragraphIdx: number,
+	): Promise<SynthResult[]> {
 		const cached = this.chunkResults.get(paragraphIdx);
 		if (cached) return cached;
 		const existing = this.prefetch.get(paragraphIdx);
@@ -181,12 +196,14 @@ export class PlaybackQueue {
 		const paragraph = this.paragraphs[paragraphIdx];
 		const controller = new AbortController();
 		const promise = paragraph
-			? this.synthesizeParagraph(paragraph, controller.signal).finally(() => {
-					const current = this.prefetch.get(paragraphIdx);
-					if (current && current.controller === controller) {
-						this.prefetch.delete(paragraphIdx);
-					}
-				})
+			? this.synthesizeParagraph(paragraph, controller.signal).finally(
+					() => {
+						const current = this.prefetch.get(paragraphIdx);
+						if (current && current.controller === controller) {
+							this.prefetch.delete(paragraphIdx);
+						}
+					},
+				)
 			: Promise.resolve<SynthResult[]>([]);
 		const entry: PrefetchEntry = { controller, promise };
 		this.prefetch.set(paragraphIdx, entry);
@@ -198,19 +215,31 @@ export class PlaybackQueue {
 		signal: AbortSignal,
 	): Promise<SynthResult[]> {
 		if (paragraph.byteLength > ACTIVE_TTS_MODEL.maxRequestBytes) {
-			return this.synthesizer.synthesizeChunked(paragraph, this.voiceId, signal);
+			return this.synthesizer.synthesizeChunked(
+				paragraph,
+				this.voiceId,
+				signal,
+			);
 		}
-		const single = await this.synthesizer.synthesize(paragraph, this.voiceId, signal);
+		const single = await this.synthesizer.synthesize(
+			paragraph,
+			this.voiceId,
+			signal,
+		);
 		return [single];
 	}
 
 	private spawnPrefetchFrom(startIdx: number): void {
-		const end = Math.min(this.paragraphs.length, startIdx + this.options.prefetchLookahead);
+		const end = Math.min(
+			this.paragraphs.length,
+			startIdx + this.options.prefetchLookahead,
+		);
 		for (let i = startIdx; i < end; i++) {
 			if (this.prefetch.has(i) || this.chunkResults.has(i)) continue;
 			const entry = this.startSynthesisFor(i);
 			entry.promise.catch((err) => {
-				if (!(err instanceof RequestAbortedError)) this.options.onError?.(err);
+				if (!(err instanceof RequestAbortedError))
+					this.options.onError?.(err);
 			});
 		}
 	}
@@ -218,7 +247,9 @@ export class PlaybackQueue {
 	private async advance(): Promise<void> {
 		if (!this.cursor) return;
 		const chunks = this.chunkResults.get(this.cursor.paragraphIdx);
-		const hasNextSubChunk = chunks ? this.cursor.subChunkIdx + 1 < chunks.length : false;
+		const hasNextSubChunk = chunks
+			? this.cursor.subChunkIdx + 1 < chunks.length
+			: false;
 		if (hasNextSubChunk) {
 			this.cursor.subChunkIdx += 1;
 			await this.playCurrent();

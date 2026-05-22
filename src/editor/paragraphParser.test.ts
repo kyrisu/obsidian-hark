@@ -71,7 +71,9 @@ describe("groupParagraphs", () => {
 	});
 
 	it("splits at the last paragraph boundary that fits when there is no internal heading", () => {
-		const raw = parseParagraphs(`# Heading\n\n${body(700)}\n\n${body(700)}\n`);
+		const raw = parseParagraphs(
+			`# Heading\n\n${body(700)}\n\n${body(700)}\n`,
+		);
 		const groups = groupParagraphs(raw, 0, CAP);
 		expect(groups.length).toBe(2);
 		expect(groups[1]!.strippedText).not.toContain("Heading");
@@ -90,7 +92,9 @@ describe("groupParagraphs", () => {
 	});
 
 	it("rejects a heading cut whose prefix is below MIN_GROUP_CHARS", () => {
-		const raw = parseParagraphs(`# Alpha\n\nTiny.\n\n# Bravo\n\n${body(1300)}\n`);
+		const raw = parseParagraphs(
+			`# Alpha\n\nTiny.\n\n# Bravo\n\n${body(1300)}\n`,
+		);
 		const groups = groupParagraphs(raw, 0, CAP);
 		expect(groups.length).toBe(2);
 		// The heading "Bravo" is pulled into group 0 rather than starting group 1.
@@ -123,7 +127,9 @@ describe("groupParagraphs", () => {
 		expect(raw.length).toBe(12);
 		const groups = groupParagraphs(raw, 0, CAP);
 		expect(groups.length).toBeGreaterThan(1);
-		expect(groups[0]!.byteLength).toBeLessThanOrEqual(FIRST_GROUP_MAX_BYTES);
+		expect(groups[0]!.byteLength).toBeLessThanOrEqual(
+			FIRST_GROUP_MAX_BYTES,
+		);
 		expect(groups[1]!.byteLength).toBeGreaterThan(FIRST_GROUP_MAX_BYTES);
 		expect(groups[1]!.byteLength).toBeLessThanOrEqual(CAP);
 	});

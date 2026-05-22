@@ -5,7 +5,11 @@ const BYTES_PER_SAMPLE = 2; // 16-bit PCM
  * Wraps raw little-endian 16-bit PCM in a minimal WAV container so the bytes are
  * playable by HTMLAudioElement and cacheable as a self-describing file.
  */
-export function pcmToWav(pcm: ArrayBuffer, sampleRate: number, channels: number): ArrayBuffer {
+export function pcmToWav(
+	pcm: ArrayBuffer,
+	sampleRate: number,
+	channels: number,
+): ArrayBuffer {
 	const dataLength = pcm.byteLength;
 	const blockAlign = channels * BYTES_PER_SAMPLE;
 	const byteRate = sampleRate * blockAlign;
@@ -40,5 +44,6 @@ export function pcmDurationSec(
 }
 
 function writeAscii(view: DataView, offset: number, text: string): void {
-	for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+	for (let i = 0; i < text.length; i++)
+		view.setUint8(offset + i, text.charCodeAt(i));
 }

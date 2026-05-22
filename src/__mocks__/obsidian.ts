@@ -19,7 +19,9 @@ export interface RequestUrlResponse {
 	headers: Record<string, string>;
 }
 
-export async function requestUrl(_params: RequestUrlParam): Promise<RequestUrlResponse> {
+export async function requestUrl(
+	_params: RequestUrlParam,
+): Promise<RequestUrlResponse> {
 	throw new Error("requestUrl is not implemented in the test mock.");
 }
 
@@ -33,7 +35,9 @@ export interface DataAdapter {
 	exists(path: string): Promise<boolean>;
 	list(path: string): Promise<{ files: string[]; folders: string[] }>;
 	mkdir(path: string): Promise<void>;
-	stat(path: string): Promise<{ size: number; ctime: number; mtime: number } | null>;
+	stat(
+		path: string,
+	): Promise<{ size: number; ctime: number; mtime: number } | null>;
 }
 
 export class Plugin {}

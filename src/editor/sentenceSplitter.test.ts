@@ -29,7 +29,11 @@ describe("splitSentences", () => {
 	});
 
 	it("splits three sentences", () => {
-		expect(sentencesOf("One. Two. Three.")).toEqual(["One.", "Two.", "Three."]);
+		expect(sentencesOf("One. Two. Three.")).toEqual([
+			"One.",
+			"Two.",
+			"Three.",
+		]);
 	});
 
 	it("does not split on the abbreviation Mr.", () => {
@@ -65,21 +69,22 @@ describe("splitSentences", () => {
 	});
 
 	it("splits Spanish sentences ending with accented words", () => {
-		expect(sentencesOf("¿Cómo estás? Muy bien.")).toEqual(["¿Cómo estás?", "Muy bien."]);
+		expect(sentencesOf("¿Cómo estás? Muy bien.")).toEqual([
+			"¿Cómo estás?",
+			"Muy bien.",
+		]);
 	});
 
 	it("does not split on the Polish abbreviation np.", () => {
-		expect(sentencesOf("Lubię owoce, np. jabłka. Smakują dobrze.")).toEqual([
-			"Lubię owoce, np. jabłka.",
-			"Smakują dobrze.",
-		]);
+		expect(sentencesOf("Lubię owoce, np. jabłka. Smakują dobrze.")).toEqual(
+			["Lubię owoce, np. jabłka.", "Smakują dobrze."],
+		);
 	});
 
 	it("does not split on a Polish abbreviation ending in an accented letter", () => {
-		expect(sentencesOf("Pracuje jako inż. budowy. Zna się na tym.")).toEqual([
-			"Pracuje jako inż. budowy.",
-			"Zna się na tym.",
-		]);
+		expect(
+			sentencesOf("Pracuje jako inż. budowy. Zna się na tym."),
+		).toEqual(["Pracuje jako inż. budowy.", "Zna się na tym."]);
 	});
 
 	it("does not split a soft-wrapped paragraph on a single newline", () => {
@@ -88,23 +93,22 @@ describe("splitSentences", () => {
 	});
 
 	it("splits at a blank line so a merged heading stays its own sentence", () => {
-		expect(coalescedSentencesOf("# Introduction\n\nThis is the body.\n")).toEqual([
-			"Introduction",
-			"This is the body.",
-		]);
+		expect(
+			coalescedSentencesOf("# Introduction\n\nThis is the body.\n"),
+		).toEqual(["Introduction", "This is the body."]);
 	});
 
 	it("splits at a blank line even inside an unclosed paren", () => {
-		expect(coalescedSentencesOf("# Heading (open\n\nbody text.\n")).toEqual([
-			"Heading (open",
-			"body text.",
-		]);
+		expect(coalescedSentencesOf("# Heading (open\n\nbody text.\n")).toEqual(
+			["Heading (open", "body text."],
+		);
 	});
 
 	it("does not carry an unclosed paren across a blank line", () => {
 		expect(
-			coalescedSentencesOf("# Heading (open\n\nFirst sentence. Second sentence.\n"),
+			coalescedSentencesOf(
+				"# Heading (open\n\nFirst sentence. Second sentence.\n",
+			),
 		).toEqual(["Heading (open", "First sentence.", "Second sentence."]);
 	});
-
 });

@@ -40,7 +40,10 @@ export function parseParagraphs(source: string): Paragraph[] {
 
 		const start = i;
 		const firstLineEnd = source.indexOf("\n", start);
-		const firstLine = firstLineEnd === -1 ? source.slice(start) : source.slice(start, firstLineEnd);
+		const firstLine =
+			firstLineEnd === -1
+				? source.slice(start)
+				: source.slice(start, firstLineEnd);
 		const headingLevel = headingLevelOf(firstLine);
 		if (headingLevel > 0) {
 			i = firstLineEnd === -1 ? source.length : firstLineEnd + 1;
@@ -50,7 +53,10 @@ export function parseParagraphs(source: string): Paragraph[] {
 		const end = i;
 
 		const sourceText = source.slice(start, end);
-		const { strippedText, strippedToSource } = stripMarkdown(sourceText, start);
+		const { strippedText, strippedToSource } = stripMarkdown(
+			sourceText,
+			start,
+		);
 		if (strippedText.trim() === "") continue;
 
 		const byteLength = new TextEncoder().encode(strippedText).byteLength;
@@ -88,7 +94,8 @@ export function groupParagraphs(
 		let bytes = paragraphs[i]!.byteLength;
 		let j = i + 1;
 		while (j < paragraphs.length) {
-			const next = bytes + PARAGRAPH_GAP.length + paragraphs[j]!.byteLength;
+			const next =
+				bytes + PARAGRAPH_GAP.length + paragraphs[j]!.byteLength;
 			if (next > cap) break;
 			members.push(paragraphs[j]!);
 			bytes = next;
@@ -123,15 +130,21 @@ function mergeParagraphs(a: Paragraph, b: Paragraph): Paragraph {
 	const strippedText = a.strippedText + PARAGRAPH_GAP + b.strippedText;
 	// The gap is whitespace and gets trimmed off sentence boundaries; any valid
 	// source offset within the first paragraph keeps the map well-formed.
-	const gapSource = a.strippedToSource[a.strippedToSource.length - 1] ?? a.sourceStart;
+	const gapSource =
+		a.strippedToSource[a.strippedToSource.length - 1] ?? a.sourceStart;
 	const strippedToSource = new Uint32Array(
-		a.strippedToSource.length + PARAGRAPH_GAP.length + b.strippedToSource.length,
+		a.strippedToSource.length +
+			PARAGRAPH_GAP.length +
+			b.strippedToSource.length,
 	);
 	strippedToSource.set(a.strippedToSource, 0);
 	for (let k = 0; k < PARAGRAPH_GAP.length; k++) {
 		strippedToSource[a.strippedToSource.length + k] = gapSource;
 	}
-	strippedToSource.set(b.strippedToSource, a.strippedToSource.length + PARAGRAPH_GAP.length);
+	strippedToSource.set(
+		b.strippedToSource,
+		a.strippedToSource.length + PARAGRAPH_GAP.length,
+	);
 	return {
 		index: a.index,
 		sourceStart: a.sourceStart,
@@ -152,7 +165,8 @@ function skipFrontmatter(source: string): number {
 	let scan = firstLineEnd + 1;
 	while (scan < source.length) {
 		const lineEnd = source.indexOf("\n", scan);
-		const line = lineEnd === -1 ? source.slice(scan) : source.slice(scan, lineEnd);
+		const line =
+			lineEnd === -1 ? source.slice(scan) : source.slice(scan, lineEnd);
 		if (line.trimEnd() === "---") {
 			return lineEnd === -1 ? source.length : lineEnd + 1;
 		}
@@ -166,7 +180,8 @@ function skipBlankLines(source: string, start: number): number {
 	let i = start;
 	while (i < source.length) {
 		const lineEnd = source.indexOf("\n", i);
-		const line = lineEnd === -1 ? source.slice(i) : source.slice(i, lineEnd);
+		const line =
+			lineEnd === -1 ? source.slice(i) : source.slice(i, lineEnd);
 		if (line.trim() !== "") return i;
 		if (lineEnd === -1) return source.length;
 		i = lineEnd + 1;
@@ -176,17 +191,21 @@ function skipBlankLines(source: string, start: number): number {
 
 function skipFencedCodeBlock(source: string, start: number): number | null {
 	const lineEnd = source.indexOf("\n", start);
-	const firstLine = lineEnd === -1 ? source.slice(start) : source.slice(start, lineEnd);
+	const firstLine =
+		lineEnd === -1 ? source.slice(start) : source.slice(start, lineEnd);
 	const fenceMatch = /^\s{0,3}(`{3,}|~{3,})/.exec(firstLine);
 	if (!fenceMatch) return null;
 
 	const fence = fenceMatch[1]!;
-	const closeRegex = new RegExp(`^\\s{0,3}${fence.replace(/[`~]/g, (m) => `\\${m}`)}\\s*$`);
+	const closeRegex = new RegExp(
+		`^\\s{0,3}${fence.replace(/[`~]/g, (m) => `\\${m}`)}\\s*$`,
+	);
 
 	let scan = lineEnd === -1 ? source.length : lineEnd + 1;
 	while (scan < source.length) {
 		const nextEnd = source.indexOf("\n", scan);
-		const line = nextEnd === -1 ? source.slice(scan) : source.slice(scan, nextEnd);
+		const line =
+			nextEnd === -1 ? source.slice(scan) : source.slice(scan, nextEnd);
 		if (closeRegex.test(line)) {
 			return nextEnd === -1 ? source.length : nextEnd + 1;
 		}
@@ -207,7 +226,9 @@ function collectParagraphEnd(source: string, start: number): number {
 
 		const nextLineEnd = source.indexOf("\n", nextLineStart);
 		const nextLine =
-			nextLineEnd === -1 ? source.slice(nextLineStart) : source.slice(nextLineStart, nextLineEnd);
+			nextLineEnd === -1
+				? source.slice(nextLineStart)
+				: source.slice(nextLineStart, nextLineEnd);
 		if (nextLine.trim() === "") return lineEnd + 1;
 		// A heading always begins a fresh paragraph, even with no blank line before it.
 		if (headingLevelOf(nextLine) > 0) return lineEnd + 1;

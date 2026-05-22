@@ -42,7 +42,9 @@ export class HarkSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName("API credentials").setHeading();
 
 		const desc = new DocumentFragment();
-		desc.append("Your Google Gemini API key, kept in Obsidian's secret storage. ");
+		desc.append(
+			"Your Google Gemini API key, kept in Obsidian's secret storage. ",
+		);
 		desc.createEl("a", { text: "Get a key", href: API_KEY_URL });
 
 		new Setting(containerEl)
@@ -52,23 +54,34 @@ export class HarkSettingTab extends PluginSettingTab {
 				text.inputEl.type = "password";
 				text.inputEl.autocomplete = "off";
 				text.setPlaceholder("Paste your API key");
-				text.setValue(this.app.secretStorage.getSecret(GEMINI_API_KEY_SECRET_ID) ?? "");
+				text.setValue(
+					this.app.secretStorage.getSecret(
+						GEMINI_API_KEY_SECRET_ID,
+					) ?? "",
+				);
 				text.onChange((value) => {
-					this.app.secretStorage.setSecret(GEMINI_API_KEY_SECRET_ID, value.trim());
+					this.app.secretStorage.setSecret(
+						GEMINI_API_KEY_SECRET_ID,
+						value.trim(),
+					);
 				});
 			});
 
 		const validateSetting = new Setting(containerEl)
 			.setName("Validate key")
 			.setDesc("Sends a no-cost request to confirm the key works.");
-		const statusEl = validateSetting.controlEl.createSpan({ cls: "tts-settings-status" });
+		const statusEl = validateSetting.controlEl.createSpan({
+			cls: "tts-settings-status",
+		});
 		validateSetting.addButton((btn) =>
 			btn.setButtonText("Validate").onClick(async () => {
 				btn.setDisabled(true);
 				statusEl.setText("Validating…");
 				statusEl.removeClasses(["is-ok", "is-error"]);
 				try {
-					const result = await validateApiKey(await this.plugin.getApiKey());
+					const result = await validateApiKey(
+						await this.plugin.getApiKey(),
+					);
 					statusEl.setText(result.message);
 					statusEl.toggleClass("is-ok", result.ok);
 					statusEl.toggleClass("is-error", !result.ok);
@@ -93,7 +106,10 @@ export class HarkSettingTab extends PluginSettingTab {
 			.setDesc("Gemini voice used to read notes aloud.")
 			.addDropdown((dd) => {
 				for (const voice of GEMINI_VOICES) {
-					dd.addOption(voice.id, `${voice.displayName} (${genderLabel(voice.gender)})`);
+					dd.addOption(
+						voice.id,
+						`${voice.displayName} (${genderLabel(voice.gender)})`,
+					);
 				}
 				dd.setValue(this.plugin.settings.voiceId);
 				dd.onChange(async (value) => {
@@ -106,11 +122,13 @@ export class HarkSettingTab extends PluginSettingTab {
 					.setIcon("play")
 					.setButtonText("Preview")
 					.onClick(() => {
-						this.voicePreview.play(this.plugin.settings.voiceId).catch((err) => {
-							new Notice(
-								`Voice preview failed: ${err instanceof Error ? err.message : String(err)}`,
-							);
-						});
+						this.voicePreview
+							.play(this.plugin.settings.voiceId)
+							.catch((err) => {
+								new Notice(
+									`Voice preview failed: ${err instanceof Error ? err.message : String(err)}`,
+								);
+							});
 					}),
 			);
 	}
@@ -135,10 +153,12 @@ export class HarkSettingTab extends PluginSettingTab {
 			.setName("Auto-advance")
 			.setDesc("Continue to the next section automatically.")
 			.addToggle((t) =>
-				t.setValue(this.plugin.settings.autoAdvance).onChange(async (value) => {
-					this.plugin.settings.autoAdvance = value;
-					await this.plugin.saveSettings();
-				}),
+				t
+					.setValue(this.plugin.settings.autoAdvance)
+					.onChange(async (value) => {
+						this.plugin.settings.autoAdvance = value;
+						await this.plugin.saveSettings();
+					}),
 			);
 
 		new Setting(containerEl)
@@ -159,7 +179,9 @@ export class HarkSettingTab extends PluginSettingTab {
 	private renderCache(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Cache").setHeading();
 
-		const sizeSetting = new Setting(containerEl).setName("Cache size").setDesc("Loading…");
+		const sizeSetting = new Setting(containerEl)
+			.setName("Cache size")
+			.setDesc("Loading…");
 		void this.plugin.cache.size().then((bytes) => {
 			sizeSetting.setDesc(
 				`${formatBytes(bytes)} of ${formatBytes(this.plugin.settings.cacheMaxBytes)} used.`,
@@ -172,7 +194,9 @@ export class HarkSettingTab extends PluginSettingTab {
 			.addSlider((s) =>
 				s
 					.setLimits(MIN_CACHE_MB, MAX_CACHE_MB, CACHE_STEP_MB)
-					.setValue(Math.round(this.plugin.settings.cacheMaxBytes / MB))
+					.setValue(
+						Math.round(this.plugin.settings.cacheMaxBytes / MB),
+					)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.cacheMaxBytes = value * MB;

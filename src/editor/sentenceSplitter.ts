@@ -14,18 +14,88 @@ export interface Sentence {
 // like "CD." into whatever follows.
 const ABBREVIATIONS = new Set([
 	// English
-	"Mr", "Mrs", "Ms", "Mx", "Dr", "Sr", "Jr", "St", "Mt", "Ft",
-	"Rev", "Hon", "Prof", "Sen", "Gen", "Col", "Cmdr", "Capt", "Lt",
-	"Sgt", "Cpl", "Pvt", "Inc", "Ltd", "Co", "Corp", "etc", "vs", "cf",
-	"i.e", "e.g", "Ph.D", "U.S", "U.K", "a.m", "p.m",
+	"Mr",
+	"Mrs",
+	"Ms",
+	"Mx",
+	"Dr",
+	"Sr",
+	"Jr",
+	"St",
+	"Mt",
+	"Ft",
+	"Rev",
+	"Hon",
+	"Prof",
+	"Sen",
+	"Gen",
+	"Col",
+	"Cmdr",
+	"Capt",
+	"Lt",
+	"Sgt",
+	"Cpl",
+	"Pvt",
+	"Inc",
+	"Ltd",
+	"Co",
+	"Corp",
+	"etc",
+	"vs",
+	"cf",
+	"i.e",
+	"e.g",
+	"Ph.D",
+	"U.S",
+	"U.K",
+	"a.m",
+	"p.m",
 	// Spanish
-	"Sra", "Srta", "Sres", "Ud", "Uds", "Vd", "Vds", "Dra", "Dña",
-	"Lic", "Ing", "Profa", "Gral", "Excmo", "Excma", "Sto", "Sta",
-	"pág", "págs", "núm", "Av", "Avda",
+	"Sra",
+	"Srta",
+	"Sres",
+	"Ud",
+	"Uds",
+	"Vd",
+	"Vds",
+	"Dra",
+	"Dña",
+	"Lic",
+	"Ing",
+	"Profa",
+	"Gral",
+	"Excmo",
+	"Excma",
+	"Sto",
+	"Sta",
+	"pág",
+	"págs",
+	"núm",
+	"Av",
+	"Avda",
 	// Polish
-	"np", "itd", "itp", "tj", "tzn", "tzw", "m.in", "dr", "prof",
-	"mgr", "inż", "ul", "nr", "godz", "wg", "ds", "św", "płk",
-	"kpt", "pkt", "ww", "cd",
+	"np",
+	"itd",
+	"itp",
+	"tj",
+	"tzn",
+	"tzw",
+	"m.in",
+	"dr",
+	"prof",
+	"mgr",
+	"inż",
+	"ul",
+	"nr",
+	"godz",
+	"wg",
+	"ds",
+	"św",
+	"płk",
+	"kpt",
+	"pkt",
+	"ww",
+	"cd",
 ]);
 
 const WHITESPACE = /\s/;
@@ -68,7 +138,10 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 			const hadTerminator = parenStack.pop() ?? false;
 			if (hadTerminator) {
 				const after = i + 1;
-				if (after >= text.length || WHITESPACE.test(text.charAt(after))) {
+				if (
+					after >= text.length ||
+					WHITESPACE.test(text.charAt(after))
+				) {
 					boundaries.push(after);
 					i = skipWhitespace(text, after);
 					continue;
@@ -89,7 +162,10 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 				continue;
 			}
 
-			if (afterPunct >= text.length || WHITESPACE.test(text.charAt(afterPunct))) {
+			if (
+				afterPunct >= text.length ||
+				WHITESPACE.test(text.charAt(afterPunct))
+			) {
 				const word = wordBefore(text, i);
 				if (!ABBREVIATIONS.has(word)) {
 					boundaries.push(afterPunct);
@@ -104,9 +180,10 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 		i++;
 	}
 
-	const segments = boundaries[boundaries.length - 1] === text.length
-		? boundaries
-		: [...boundaries, text.length];
+	const segments =
+		boundaries[boundaries.length - 1] === text.length
+			? boundaries
+			: [...boundaries, text.length];
 
 	const sentences: Sentence[] = [];
 	let prev = 0;
@@ -125,8 +202,10 @@ export function splitSentences(paragraph: Paragraph): Sentence[] {
 		}
 
 		const senText = text.slice(start, end);
-		const sourceStart = paragraph.strippedToSource[start] ?? paragraph.sourceStart;
-		const lastSourceIdx = paragraph.strippedToSource[end - 1] ?? paragraph.sourceStart;
+		const sourceStart =
+			paragraph.strippedToSource[start] ?? paragraph.sourceStart;
+		const lastSourceIdx =
+			paragraph.strippedToSource[end - 1] ?? paragraph.sourceStart;
 		const sourceEnd = lastSourceIdx + 1;
 
 		sentences.push({

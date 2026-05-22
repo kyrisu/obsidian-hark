@@ -27,7 +27,10 @@ export function paragraphsFromSelection(
 		const sliceStart = trimStart - p.sourceStart;
 		const sliceEnd = trimEnd - p.sourceStart;
 		const sourceText = p.sourceText.slice(sliceStart, sliceEnd);
-		const { strippedText, strippedToSource } = stripMarkdown(sourceText, trimStart);
+		const { strippedText, strippedToSource } = stripMarkdown(
+			sourceText,
+			trimStart,
+		);
 		const byteLength = new TextEncoder().encode(strippedText).byteLength;
 		result.push({
 			index: outIdx++,
