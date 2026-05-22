@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
-import type ReadAloudPlugin from "./main";
+import type HarkPlugin from "./main";
 import { GEMINI_API_KEY_SECRET_ID } from "./types";
 import { GEMINI_VOICES, type GeminiVoice } from "./tts/voices";
 import { validateApiKey } from "./tts/GeminiTtsClient";
@@ -14,15 +14,15 @@ const MAX_CACHE_MB = 2048;
 const CACHE_STEP_MB = 100;
 const API_KEY_URL = "https://aistudio.google.com/apikey";
 
-export class ReadAloudSettingTab extends PluginSettingTab {
+export class HarkSettingTab extends PluginSettingTab {
 	private voicePreview: VoicePreview;
 
 	constructor(
 		app: App,
-		public plugin: ReadAloudPlugin,
+		public plugin: HarkPlugin,
 	) {
 		super(app, plugin);
-		this.voicePreview = new VoicePreview(() => this.plugin.getGoogleApiKey());
+		this.voicePreview = new VoicePreview(() => this.plugin.getApiKey());
 	}
 
 	display(): void {
@@ -68,7 +68,7 @@ export class ReadAloudSettingTab extends PluginSettingTab {
 				statusEl.setText("Validating…");
 				statusEl.removeClasses(["is-ok", "is-error"]);
 				try {
-					const result = await validateApiKey(await this.plugin.getGoogleApiKey());
+					const result = await validateApiKey(await this.plugin.getApiKey());
 					statusEl.setText(result.message);
 					statusEl.toggleClass("is-ok", result.ok);
 					statusEl.toggleClass("is-error", !result.ok);

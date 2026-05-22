@@ -6,7 +6,7 @@ import {
 	PlaybackUiState,
 	PluginSettings,
 } from "./types";
-import { ReadAloudSettingTab } from "./settings";
+import { HarkSettingTab } from "./settings";
 import { groupParagraphs, parseParagraphs } from "./editor/paragraphParser";
 import { paragraphsFromSelection } from "./editor/selectionReader";
 import { ACTIVE_TTS_MODEL } from "./tts/GeminiTtsClient";
@@ -26,7 +26,7 @@ import { StatusBar } from "./ui/StatusBar";
 import { FloatingPlayer } from "./ui/FloatingPlayer";
 import { clamp } from "./utils/math";
 
-export default class ReadAloudPlugin extends Plugin {
+export default class HarkPlugin extends Plugin {
 	settings!: PluginSettings;
 	cache!: Cache;
 	synthesizer!: Synthesizer;
@@ -40,7 +40,7 @@ export default class ReadAloudPlugin extends Plugin {
 		await this.loadSettings();
 		this.cache = new Cache(this.app.vault.adapter, this.settings.cacheMaxBytes);
 		await this.cache.init();
-		this.synthesizer = new Synthesizer(this.cache, () => this.getGoogleApiKey());
+		this.synthesizer = new Synthesizer(this.cache, () => this.getApiKey());
 		let lastSentenceFrom: number | null = null;
 		this.player = new Player({
 			onHighlightChange: (state) => {
@@ -59,7 +59,7 @@ export default class ReadAloudPlugin extends Plugin {
 			ttsHighlightField,
 			makeAutoPauseExtension(() => this.playbackQueue),
 		]);
-		this.addSettingTab(new ReadAloudSettingTab(this.app, this));
+		this.addSettingTab(new HarkSettingTab(this.app, this));
 
 		const statusBarEl = this.addStatusBarItem();
 		this.statusBar = new StatusBar(statusBarEl, () => this.playbackQueue?.togglePause());
@@ -146,7 +146,7 @@ export default class ReadAloudPlugin extends Plugin {
 		});
 	}
 
-	async getGoogleApiKey(): Promise<string> {
+	async getApiKey(): Promise<string> {
 		return this.app.secretStorage.getSecret(GEMINI_API_KEY_SECRET_ID) ?? "";
 	}
 

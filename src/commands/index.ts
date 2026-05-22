@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
-import type ReadAloudPlugin from "../main";
+import type HarkPlugin from "../main";
 
-export function registerCommands(plugin: ReadAloudPlugin): void {
+export function registerCommands(plugin: HarkPlugin): void {
 	plugin.addCommand({
 		id: "play-from-cursor",
 		name: "Read note aloud from cursor",
