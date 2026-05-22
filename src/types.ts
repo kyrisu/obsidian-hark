@@ -61,6 +61,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 // SecretStorage id for the Gemini API key. Lowercase alphanumeric with dashes
 // only — colons and other characters are rejected by app.secretStorage.
-export const GOOGLE_TTS_SECRET_ID = "tts-read-aloud-gemini-api-key";
+export const GEMINI_API_KEY_SECRET_ID = "hark-gemini-api-key";
 
 export type PlaybackUiState = "idle" | "loading" | "playing" | "paused" | "error";

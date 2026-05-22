@@ -152,7 +152,7 @@ export async function validateApiKey(
 	if (!key) return { ok: false, message: "No API key set." };
 
 	console.debug(
-		`[Read Aloud] Validating API key: length ${key.length}, ` +
+		`[Hark] Validating API key: length ${key.length}, ` +
 			`${key.slice(0, 8)}…${key.slice(-4)}`,
 	);
 
@@ -165,7 +165,7 @@ export async function validateApiKey(
 			throw: false,
 		});
 	} catch (err) {
-		console.error("[Read Aloud] API key validation could not reach Google:", err);
+		console.error("[Hark] API key validation could not reach Google:", err);
 		const detail = err instanceof Error ? err.message : String(err);
 		return { ok: false, message: `Could not reach the Gemini API: ${detail}` };
 	}
@@ -174,7 +174,7 @@ export async function validateApiKey(
 		return { ok: true, message: "API key is valid." };
 	}
 
-	console.error(`[Read Aloud] API key validation failed (HTTP ${resp.status}):`, resp.text);
+	console.error(`[Hark] API key validation failed (HTTP ${resp.status}):`, resp.text);
 	let message = describeUpstreamError(resp.status, resp.text);
 	if (!looksLikeGoogleApiKey(key)) {
 		message +=

@@ -1,7 +1,7 @@
 {
-	"name": "tts-read-aloud",
+	"name": "obsidian-hark",
 	"version": "0.1.0",
-	"description": "Read your notes aloud using Google Gemini-TTS with word-level highlighting.",
+	"description": "Read any note aloud with a synchronised sentence highlight. Audio caches locally for instant replays.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {

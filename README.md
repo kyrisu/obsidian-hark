@@ -1,4 +1,4 @@
-# Read Aloud (Gemini-TTS)
+# Hark
 
 > **⚠️ Draft README — skeleton only.** This file is structurally complete but is
 > not release-ready. Items that need the maintainer before v1.0 ship:
@@ -25,7 +25,7 @@ nothing.
 
 1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in with a Google account.
 2. Click **Get API key** and create a key (a new or existing Google Cloud project).
-3. Copy the key. In Obsidian, open **Settings → Read Aloud (Gemini-TTS)**, paste the key into the **Gemini API key** field, and click **Validate**.
+3. Copy the key. In Obsidian, open **Settings → Hark**, paste the key into the **Gemini API key** field, and click **Validate**.
 
 The key is stored in Obsidian's `SecretStorage` rather than in the plugin's
 `data.json`. The plugin calls the Gemini Developer API at
@@ -52,8 +52,8 @@ Until the plugin is in the community catalogue, install it from a local build:
 1. Clone this repository.
 2. Run `npm install` then `npm run build` — this produces `main.js`.
 3. Copy (or symlink) `main.js`, `manifest.json`, and `styles.css` into
-   `<your-vault>/.obsidian/plugins/tts-read-aloud/`.
-4. In Obsidian, enable **Read Aloud (Gemini-TTS)** under **Settings → Community plugins**.
+   `<your-vault>/.obsidian/plugins/hark/`.
+4. In Obsidian, enable **Hark** under **Settings → Community plugins**.
 
 ## Usage
 
@@ -105,7 +105,7 @@ else, and nothing is sent for paragraphs already in the local cache.
 ## Cache
 
 Synthesised audio (WAV) and sentence-timing data are content-hashed and stored
-in `<your-vault>/.tts-cache/`. The dot-prefixed folder name keeps the cache out
+in `<your-vault>/.hark-cache/`. The dot-prefixed folder name keeps the cache out
 of Obsidian Sync. The cache uses LRU eviction under a size limit configurable
 in settings; you can also clear it from the settings tab or the **Clear cache**
 command.

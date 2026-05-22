@@ -1,7 +1,7 @@
 import { Editor, MarkdownView, Notice, Plugin } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
-	GOOGLE_TTS_SECRET_ID,
+	GEMINI_API_KEY_SECRET_ID,
 	Paragraph,
 	PlaybackUiState,
 	PluginSettings,
@@ -147,7 +147,7 @@ export default class ReadAloudPlugin extends Plugin {
 	}
 
 	async getGoogleApiKey(): Promise<string> {
-		return this.app.secretStorage.getSecret(GOOGLE_TTS_SECRET_ID) ?? "";
+		return this.app.secretStorage.getSecret(GEMINI_API_KEY_SECRET_ID) ?? "";
 	}
 
 	onunload() {

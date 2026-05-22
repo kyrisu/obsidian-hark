@@ -1,7 +1,7 @@
 import type { DataAdapter } from "obsidian";
 import type { CacheEntry, CacheIndex, SentenceTiming, SynthResult } from "../types";
 
-const CACHE_DIR = ".tts-cache";
+const CACHE_DIR = ".hark-cache";
 const INDEX_FILE = `${CACHE_DIR}/index.json`;
 const INDEX_TMP = `${CACHE_DIR}/index.json.tmp`;
 const FLUSH_DELAY_MS = 5_000;

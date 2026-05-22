@@ -1,6 +1,6 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type ReadAloudPlugin from "./main";
-import { GOOGLE_TTS_SECRET_ID } from "./types";
+import { GEMINI_API_KEY_SECRET_ID } from "./types";
 import { GEMINI_VOICES, type GeminiVoice } from "./tts/voices";
 import { validateApiKey } from "./tts/GeminiTtsClient";
 import { VoicePreview } from "./tts/VoicePreview";
@@ -52,9 +52,9 @@ export class ReadAloudSettingTab extends PluginSettingTab {
 				text.inputEl.type = "password";
 				text.inputEl.autocomplete = "off";
 				text.setPlaceholder("Paste your API key");
-				text.setValue(this.app.secretStorage.getSecret(GOOGLE_TTS_SECRET_ID) ?? "");
+				text.setValue(this.app.secretStorage.getSecret(GEMINI_API_KEY_SECRET_ID) ?? "");
 				text.onChange((value) => {
-					this.app.secretStorage.setSecret(GOOGLE_TTS_SECRET_ID, value.trim());
+					this.app.secretStorage.setSecret(GEMINI_API_KEY_SECRET_ID, value.trim());
 				});
 			});
 
