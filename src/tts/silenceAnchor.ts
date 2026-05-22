@@ -44,7 +44,10 @@ export interface SilenceInterval {
 
 // Finds the silent gaps in little-endian 16-bit mono PCM. Returns intervals in
 // playback-time order.
-export function detectSilences(pcm: ArrayBuffer, sampleRate: number): SilenceInterval[] {
+export function detectSilences(
+	pcm: ArrayBuffer,
+	sampleRate: number,
+): SilenceInterval[] {
 	const samples = new Int16Array(pcm);
 	const windowSamples = Math.round((sampleRate * WINDOW_MS) / 1000);
 	if (windowSamples <= 0 || samples.length < windowSamples) return [];
@@ -64,7 +67,8 @@ export function detectSilences(pcm: ArrayBuffer, sampleRate: number): SilenceInt
 	// 90th-percentile window RMS as the speech-level reference: robust to the
 	// silent windows themselves dragging a plain mean down.
 	const sorted = [...rms].sort((a, b) => a - b);
-	const reference = sorted[clamp(Math.floor(sorted.length * 0.9), 0, sorted.length - 1)]!;
+	const reference =
+		sorted[clamp(Math.floor(sorted.length * 0.9), 0, sorted.length - 1)]!;
 	const threshold = SILENCE_RATIO * reference;
 
 	const windowSec = windowSamples / sampleRate;
@@ -109,12 +113,17 @@ export function anchorSentenceTimings(
 
 	const charWeight = sentences.map((s) => s.text.length);
 	const totalW = charWeight.reduce((a, b) => a + b, 0);
-	if (totalW === 0) return distributeSentenceTimings(sentences, audioDurationSec);
+	if (totalW === 0)
+		return distributeSentenceTimings(sentences, audioDurationSec);
 
 	const silences = detectSilences(pcm, sampleRate);
-	const totalSilence = silences.reduce((sum, s) => sum + (s.endSec - s.startSec), 0);
+	const totalSilence = silences.reduce(
+		(sum, s) => sum + (s.endSec - s.startSec),
+		0,
+	);
 	const speechDur = audioDurationSec - totalSilence;
-	if (speechDur <= 0) return distributeSentenceTimings(sentences, audioDurationSec);
+	if (speechDur <= 0)
+		return distributeSentenceTimings(sentences, audioDurationSec);
 
 	// Alternating speech/silence spans across the whole clip. The walk consumes
 	// speech-span time as budget and steps over silence spans for free, so a
@@ -122,7 +131,8 @@ export function anchorSentenceTimings(
 	const spans: { silent: boolean; start: number; end: number }[] = [];
 	let cursor = 0;
 	for (const s of silences) {
-		if (s.startSec > cursor) spans.push({ silent: false, start: cursor, end: s.startSec });
+		if (s.startSec > cursor)
+			spans.push({ silent: false, start: cursor, end: s.startSec });
 		spans.push({ silent: true, start: s.startSec, end: s.endSec });
 		cursor = s.endSec;
 	}
@@ -210,5 +220,6 @@ export function anchorSentenceTimings(
 		endTime: decided[i + 1]!,
 		sourceStart: s.sourceStart,
 		sourceEnd: s.sourceEnd,
+		text: s.text,
 	}));
 }

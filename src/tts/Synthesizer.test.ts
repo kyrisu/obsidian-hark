@@ -10,7 +10,9 @@ function sentence(partial: Partial<Sentence> & { text: string }): Sentence {
 		sourceStart: partial.sourceStart ?? 0,
 		sourceEnd: partial.sourceEnd ?? partial.text.length,
 		text: partial.text,
-		byteLength: partial.byteLength ?? new TextEncoder().encode(partial.text).byteLength,
+		byteLength:
+			partial.byteLength ??
+			new TextEncoder().encode(partial.text).byteLength,
 	};
 }
 
@@ -51,11 +53,14 @@ describe("distributeSentenceTimings", () => {
 		expect(distributeSentenceTimings([], 5)).toEqual([]);
 	});
 
-	it("preserves sourceStart and sourceEnd from each sentence", () => {
-		const sentences = [sentence({ text: "One.", sourceStart: 10, sourceEnd: 14 })];
+	it("preserves sourceStart, sourceEnd, and text from each sentence", () => {
+		const sentences = [
+			sentence({ text: "One.", sourceStart: 10, sourceEnd: 14 }),
+		];
 		const timings = distributeSentenceTimings(sentences, 1);
 		expect(timings[0]!.sourceStart).toBe(10);
 		expect(timings[0]!.sourceEnd).toBe(14);
+		expect(timings[0]!.text).toBe("One.");
 		expect(timings[0]!.endTime).toBe(1);
 	});
 });
@@ -67,7 +72,11 @@ describe("binPackSentences", () => {
 			sentence({ text: "BBBB" }),
 			sentence({ text: "CCCC" }),
 		];
-		const groups = binPackSentences(sentences, identityParagraph("AAAA BBBB CCCC"), 9);
+		const groups = binPackSentences(
+			sentences,
+			identityParagraph("AAAA BBBB CCCC"),
+			9,
+		);
 		expect(groups).toHaveLength(2);
 		expect(groups[0]!.map((s) => s.text)).toEqual(["AAAA", "BBBB"]);
 		expect(groups[1]!.map((s) => s.text)).toEqual(["CCCC"]);
@@ -83,7 +92,12 @@ describe("binPackSentences", () => {
 			strippedStart: 0,
 			strippedEnd: text.length,
 		});
-		const groups = binPackSentences([long], identityParagraph(text), 10, () => notices++);
+		const groups = binPackSentences(
+			[long],
+			identityParagraph(text),
+			10,
+			() => notices++,
+		);
 		expect(notices).toBe(1);
 		expect(groups.length).toBeGreaterThan(1);
 		const totalBytes = groups.reduce(
@@ -102,17 +116,8 @@ describe("binPackSentences", () => {
 		// Stripped (markdown removed): "alpha beta gamma delta epsilon zeta" (35 chars)
 		const strippedText = "alpha beta gamma delta epsilon zeta";
 		const strippedToSource = new Uint32Array([
-			2, 3, 4, 5, 6,
-			7,
-			8, 9, 10, 11,
-			14,
-			15, 16, 17, 18, 19,
-			20,
-			21, 22, 23, 24, 25,
-			26,
-			27, 28, 29, 30, 31, 32, 33,
-			34,
-			35, 36, 37, 38,
+			2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+			23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
 		]);
 		const paragraph: Paragraph = {
 			index: 0,

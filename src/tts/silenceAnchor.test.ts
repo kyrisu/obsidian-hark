@@ -49,11 +49,15 @@ describe("detectSilences", () => {
 	});
 
 	it("returns an empty array for all-silence audio", () => {
-		expect(detectSilences(buildPcm([{ silent: true, sec: 1 }]), SR)).toEqual([]);
+		expect(
+			detectSilences(buildPcm([{ silent: true, sec: 1 }]), SR),
+		).toEqual([]);
 	});
 
 	it("returns an empty array for all-tone audio", () => {
-		expect(detectSilences(buildPcm([{ silent: false, sec: 1 }]), SR)).toEqual([]);
+		expect(
+			detectSilences(buildPcm([{ silent: false, sec: 1 }]), SR),
+		).toEqual([]);
 	});
 
 	it("returns an empty array for an empty buffer", () => {
@@ -295,11 +299,12 @@ describe("anchorSentenceTimings", () => {
 		expect(result[result.length - 1]!.endTime).toBe(6);
 		for (let i = 0; i < result.length; i++) {
 			expect(result[i]!.endTime).toBeGreaterThan(result[i]!.startTime);
-			if (i > 0) expect(result[i]!.startTime).toBe(result[i - 1]!.endTime);
+			if (i > 0)
+				expect(result[i]!.startTime).toBe(result[i - 1]!.endTime);
 		}
 	});
 
-	it("carries source offsets and index through from the proportional prior", () => {
+	it("carries source offsets, index, and text through from the proportional prior", () => {
 		const sentences = [
 			sentence("A".repeat(10), 100),
 			sentence("A".repeat(10), 200),
@@ -311,6 +316,7 @@ describe("anchorSentenceTimings", () => {
 			expect(timing.index).toBe(i);
 			expect(timing.sourceStart).toBe(sentences[i]!.sourceStart);
 			expect(timing.sourceEnd).toBe(sentences[i]!.sourceEnd);
+			expect(timing.text).toBe(sentences[i]!.text);
 		});
 	});
 });

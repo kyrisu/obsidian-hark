@@ -1,19 +1,30 @@
-import { Notice } from "obsidian";
+import { MarkdownView, Notice } from "obsidian";
 import type HarkPlugin from "../main";
 
 export function registerCommands(plugin: HarkPlugin): void {
+	// `checkCallback` rather than `editorCallback`: the latter is suppressed when
+	// no editor is focused, so it never fires in Reading mode. `view.editor`
+	// exists in both modes (`getCursor` returns the last cursor position).
 	plugin.addCommand({
 		id: "play-from-cursor",
 		name: "Read note aloud from cursor",
-		editorCallback: (editor) => {
-			void plugin.startPlaybackFromCursor(editor);
+		checkCallback: (checking) => {
+			const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!view) return false;
+			if (checking) return true;
+			void plugin.startPlaybackFromCursor(view.editor);
+			return true;
 		},
 	});
 	plugin.addCommand({
 		id: "play-from-top",
 		name: "Read note aloud from beginning",
-		editorCallback: (editor) => {
-			void plugin.startPlaybackFromTop(editor);
+		checkCallback: (checking) => {
+			const view = plugin.app.workspace.getActiveViewOfType(MarkdownView);
+			if (!view) return false;
+			if (checking) return true;
+			void plugin.startPlaybackFromTop(view.editor);
+			return true;
 		},
 	});
 	plugin.addCommand({

@@ -30,7 +30,8 @@ export class Synthesizer {
 		private getGoogleKey: () => Promise<string>,
 		opts: SynthesizerOptions = {},
 	) {
-		this.synthesizeSpeech = opts.synthesizeSpeech ?? defaultSynthesizeSpeech;
+		this.synthesizeSpeech =
+			opts.synthesizeSpeech ?? defaultSynthesizeSpeech;
 	}
 
 	async synthesize(
@@ -42,7 +43,12 @@ export class Synthesizer {
 			throw new RequestTooLargeError(paragraph.byteLength);
 		}
 		const sentences = splitSentences(paragraph);
-		return this.synthesizeOne(paragraph.strippedText, sentences, voiceId, signal);
+		return this.synthesizeOne(
+			paragraph.strippedText,
+			sentences,
+			voiceId,
+			signal,
+		);
 	}
 
 	async synthesizeChunked(
@@ -51,13 +57,21 @@ export class Synthesizer {
 		signal?: AbortSignal,
 	): Promise<SynthResult[]> {
 		const sentences = splitSentences(paragraph);
-		const groups = binPackSentences(sentences, paragraph, ACTIVE_TTS_MODEL.maxRequestBytes, () =>
-			this.notifyOversizeOnce(paragraph.index),
+		const groups = binPackSentences(
+			sentences,
+			paragraph,
+			ACTIVE_TTS_MODEL.maxRequestBytes,
+			() => this.notifyOversizeOnce(paragraph.index),
 		);
 		const results: SynthResult[] = [];
 		for (const group of groups) {
 			const text = group.map((s) => s.text).join(" ");
-			const result = await this.synthesizeOne(text, group, voiceId, signal);
+			const result = await this.synthesizeOne(
+				text,
+				group,
+				voiceId,
+				signal,
+			);
 			results.push(result);
 		}
 		return results;
@@ -74,7 +88,13 @@ export class Synthesizer {
 		const existing = this.inFlight.get(hash);
 		if (existing) return existing;
 
-		const promise = this.runSynthesis(hash, text, sentences, voiceId, signal).finally(() => {
+		const promise = this.runSynthesis(
+			hash,
+			text,
+			sentences,
+			voiceId,
+			signal,
+		).finally(() => {
 			this.inFlight.delete(hash);
 		});
 		this.inFlight.set(hash, promise);
@@ -96,19 +116,30 @@ export class Synthesizer {
 		if (signal?.aborted) throw new RequestAbortedError();
 
 		const apiKey = await this.getGoogleKey();
-		if (!apiKey) throw new GeminiTtsError("Google API key is not configured.");
+		if (!apiKey)
+			throw new GeminiTtsError("Google API key is not configured.");
 
-		const { audio, durationSec, pcm, sampleRate } = await this.synthesizeSpeech({
-			text,
-			voiceId,
-			apiKey,
-			signal,
-		});
+		const { audio, durationSec, pcm, sampleRate } =
+			await this.synthesizeSpeech({
+				text,
+				voiceId,
+				apiKey,
+				signal,
+			});
 		if (signal?.aborted) throw new RequestAbortedError();
 
-		const timings = anchorSentenceTimings(sentences, durationSec, pcm, sampleRate);
+		const timings = anchorSentenceTimings(
+			sentences,
+			durationSec,
+			pcm,
+			sampleRate,
+		);
 
-		const result: SynthResult = { audio, audioDurationSec: durationSec, sentences: timings };
+		const result: SynthResult = {
+			audio,
+			audioDurationSec: durationSec,
+			sentences: timings,
+		};
 		await this.cache.put(hash, text.slice(0, 80), result);
 		return result;
 	}
@@ -133,7 +164,9 @@ export function distributeSentenceTimings(
 		const fraction = s.text.length / totalChars;
 		const startTime = cursor;
 		const endTime =
-			i === sentences.length - 1 ? audioDurationSec : cursor + audioDurationSec * fraction;
+			i === sentences.length - 1
+				? audioDurationSec
+				: cursor + audioDurationSec * fraction;
 		cursor = endTime;
 		return {
 			index: i,
@@ -141,6 +174,7 @@ export function distributeSentenceTimings(
 			endTime,
 			sourceStart: s.sourceStart,
 			sourceEnd: s.sourceEnd,
+			text: s.text,
 		};
 	});
 }
@@ -167,7 +201,11 @@ export function binPackSentences(
 		if (sentence.byteLength > maxBytes) {
 			flush();
 			onMidSentenceSplit?.();
-			for (const piece of splitOversizeSentence(sentence, paragraph, maxBytes)) {
+			for (const piece of splitOversizeSentence(
+				sentence,
+				paragraph,
+				maxBytes,
+			)) {
 				groups.push([piece]);
 			}
 			continue;
@@ -201,7 +239,8 @@ function splitOversizeSentence(
 		}
 		if (end < text.length) {
 			let split = end;
-			while (split > pieceStart && !/\s/.test(text.charAt(split - 1))) split--;
+			while (split > pieceStart && !/\s/.test(text.charAt(split - 1)))
+				split--;
 			if (split > pieceStart) end = split;
 		}
 		const pieceText = text.slice(pieceStart, end);
@@ -210,7 +249,8 @@ function splitOversizeSentence(
 		const sourceStart =
 			paragraph.strippedToSource[strippedStart] ?? sentence.sourceStart;
 		const sourceEnd =
-			(paragraph.strippedToSource[strippedEnd - 1] ?? sentence.sourceEnd - 1) + 1;
+			(paragraph.strippedToSource[strippedEnd - 1] ??
+				sentence.sourceEnd - 1) + 1;
 		pieces.push({
 			strippedStart,
 			strippedEnd,
@@ -220,7 +260,8 @@ function splitOversizeSentence(
 			byteLength: encoder.encode(pieceText).byteLength,
 		});
 		pieceStart = end;
-		while (pieceStart < text.length && /\s/.test(text.charAt(pieceStart))) pieceStart++;
+		while (pieceStart < text.length && /\s/.test(text.charAt(pieceStart)))
+			pieceStart++;
 	}
 	return pieces;
 }

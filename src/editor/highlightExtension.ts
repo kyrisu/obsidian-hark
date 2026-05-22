@@ -1,12 +1,9 @@
 import { type ChangeSet, StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
 import { MarkdownView, type App } from "obsidian";
+import { type HighlightTarget } from "../types";
 
-export interface TtsHighlightState {
-	sentence: { from: number; to: number };
-}
-
-export const setTtsHighlight = StateEffect.define<TtsHighlightState | null>();
+export const setTtsHighlight = StateEffect.define<HighlightTarget | null>();
 
 export const ttsHighlightField = StateField.define<DecorationSet>({
 	create: () => Decoration.none,
@@ -29,12 +26,14 @@ export const ttsHighlightField = StateField.define<DecorationSet>({
 
 export function applyHighlight(
 	view: EditorView,
-	state: TtsHighlightState | null,
+	state: HighlightTarget | null,
 	scroll: boolean,
 ): void {
 	const effects: StateEffect<unknown>[] = [setTtsHighlight.of(state)];
 	if (scroll && state) {
-		effects.push(EditorView.scrollIntoView(state.sentence.from, { y: "center" }));
+		effects.push(
+			EditorView.scrollIntoView(state.sentence.from, { y: "center" }),
+		);
 	}
 	view.dispatch({ effects });
 }
@@ -42,7 +41,7 @@ export function applyHighlight(
 export function activeEditorView(app: App): EditorView | null {
 	const view = app.workspace.getActiveViewOfType(MarkdownView);
 	// `editor.cm` is not in public typings but is a stable community pattern for reaching the CM6 view.
-	return ((view?.editor as { cm?: EditorView } | undefined)?.cm) ?? null;
+	return (view?.editor as { cm?: EditorView } | undefined)?.cm ?? null;
 }
 
 export interface EditAffect {
@@ -61,7 +60,10 @@ export function classifyEdit(
 	let pauseRequired = false;
 	const touchedPrefetch = new Set<number>();
 	changes.iterChanges((fromA, toA) => {
-		if (playingRange && !(toA < playingRange.from || fromA > playingRange.to)) {
+		if (
+			playingRange &&
+			!(toA < playingRange.from || fromA > playingRange.to)
+		) {
 			pauseRequired = true;
 		}
 		for (const r of prefetchedRanges) {
@@ -89,6 +91,7 @@ export function makeAutoPauseExtension(getQueue: () => AutoPauseQueue | null) {
 			queue.prefetchedRanges(),
 		);
 		if (decision.pauseRequired) queue.pause();
-		for (const idx of decision.invalidatePrefetchIndexes) queue.invalidatePrefetch(idx);
+		for (const idx of decision.invalidatePrefetchIndexes)
+			queue.invalidatePrefetch(idx);
 	});
 }

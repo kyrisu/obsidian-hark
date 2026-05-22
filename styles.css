@@ -1,8 +1,20 @@
 .tts-sentence {
-	background-color: color-mix(in srgb, var(--text-highlight-bg) 40%, transparent);
+	background-color: color-mix(
+		in srgb,
+		var(--text-highlight-bg) 40%,
+		transparent
+	);
 	border-radius: 2px;
 	padding: 0 1px;
 	transition: background-color 120ms ease-out;
+}
+
+::highlight(hark-tts) {
+	background-color: color-mix(
+		in srgb,
+		var(--text-highlight-bg) 40%,
+		transparent
+	);
 }
 
 .tts-floating-player {
@@ -109,6 +121,48 @@
 	background: var(--interactive-accent);
 	border-radius: 2px;
 	transition: width 80ms linear;
+}
+
+/* Mobile: dock full-width just above Obsidian's mobile navbar instead of the
+   desktop draggable pill. --navbar-height and --safe-area-inset-* are set by
+   Obsidian (the latter since v1.6.0); both are undocumented internals, hence
+   the env()/literal fallbacks. The two are added together because
+   --navbar-height does not itself include the home-indicator inset. */
+.tts-floating-player.is-mobile {
+	left: 0;
+	right: 0;
+	width: 100%;
+	box-sizing: border-box;
+	justify-content: center;
+	border-radius: 0;
+	border-left: none;
+	border-right: none;
+	bottom: calc(
+		var(--navbar-height, 48px) +
+			var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))
+	);
+	padding-left: max(
+		12px,
+		var(--safe-area-inset-left, env(safe-area-inset-left, 0px))
+	);
+	padding-right: max(
+		12px,
+		var(--safe-area-inset-right, env(safe-area-inset-right, 0px))
+	);
+}
+
+.tts-floating-player.is-mobile .tts-floating-player__drag {
+	display: none;
+}
+
+.tts-floating-player.is-mobile .tts-floating-player__controls {
+	width: 100%;
+	justify-content: center;
+}
+
+.tts-floating-player.is-mobile .tts-floating-player__progress {
+	flex: 1 1 auto;
+	min-width: 40px;
 }
 
 .tts-status-bar {

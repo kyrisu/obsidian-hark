@@ -4,6 +4,12 @@ export interface SentenceTiming {
 	endTime: number;
 	sourceStart: number;
 	sourceEnd: number;
+	text?: string; // present for entries synthesized after reading-mode support; absent in older cached entries
+}
+
+export interface HighlightTarget {
+	sentence: { from: number; to: number };
+	text: string;
 }
 
 export interface Paragraph {
@@ -63,4 +69,9 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 // only — colons and other characters are rejected by app.secretStorage.
 export const GEMINI_API_KEY_SECRET_ID = "hark-gemini-api-key";
 
-export type PlaybackUiState = "idle" | "loading" | "playing" | "paused" | "error";
+export type PlaybackUiState =
+	| "idle"
+	| "loading"
+	| "playing"
+	| "paused"
+	| "error";

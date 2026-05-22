@@ -1,14 +1,19 @@
-import type { SentenceTiming } from "../types";
-import type { TtsHighlightState } from "../editor/highlightExtension";
+import type { HighlightTarget, SentenceTiming } from "../types";
 import { MAX_RATE, MIN_RATE } from "../playback/rate";
 import { clamp } from "../utils/math";
 
 const SENTENCE_EDGE_TOLERANCE = 0.05;
 
-export type PlayerState = "idle" | "loading" | "playing" | "paused" | "ended" | "error";
+export type PlayerState =
+	| "idle"
+	| "loading"
+	| "playing"
+	| "paused"
+	| "ended"
+	| "error";
 
 export interface PlayerOptions {
-	onHighlightChange?: (state: TtsHighlightState | null) => void;
+	onHighlightChange?: (state: HighlightTarget | null) => void;
 	onStateChange?: (state: PlayerState, prev: PlayerState) => void;
 	onEnded?: () => void;
 	onError?: (err: unknown) => void;
@@ -29,7 +34,9 @@ export class Player {
 		this.setState("loading");
 		this.sentences = sentences;
 		const el = this.ensureAudio();
-		const url = URL.createObjectURL(new Blob([audio], { type: "audio/wav" }));
+		const url = URL.createObjectURL(
+			new Blob([audio], { type: "audio/wav" }),
+		);
 		this.currentUrl = url;
 		el.src = url;
 		await new Promise<void>((resolve, reject) => {
@@ -182,6 +189,7 @@ export class Player {
 		this.lastSentenceIdx = sIdx;
 		this.options.onHighlightChange?.({
 			sentence: { from: s.sourceStart, to: s.sourceEnd },
+			text: s.text ?? "",
 		});
 	}
 
