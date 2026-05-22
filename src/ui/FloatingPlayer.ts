@@ -69,16 +69,25 @@ export class FloatingPlayer {
 		});
 		this.progressTrack.addEventListener("click", this.handleSeekClick);
 
+		// Shown only while loading; swaps in for the (frozen) seek bar, so the
+		// player keeps its width. Decorative — the status bar carries the
+		// "Loading audio…" announcement for screen readers.
+		const equalizer = controls.createEl("div", {
+			cls: "tts-floating-player__equalizer",
+			attr: { "aria-hidden": "true" },
+		});
+		const barCount = 16;
+		for (let i = 0; i < barCount; i++) {
+			const bar = equalizer.createEl("span");
+			// Negative, linearly increasing delay makes the pulse travel
+			// left-to-right across the bars.
+			const delay = -(i / barCount);
+			bar.setCssStyles({ animationDelay: `${delay.toFixed(3)}s` });
+		}
+
 		this.timeLabel = controls.createEl("span", {
 			cls: "tts-floating-player__time",
 			text: "00:00 / 00:00",
-		});
-
-		const loading = this.root.createEl("div", { cls: "tts-floating-player__loading" });
-		loading.createEl("div", { cls: "tts-floating-player__spinner" });
-		loading.createEl("span", {
-			cls: "tts-floating-player__loading-label",
-			text: "Preparing audio…",
 		});
 
 		this.speedSelect = controls.createEl("select", { cls: "tts-floating-player__speed" });
@@ -99,7 +108,10 @@ export class FloatingPlayer {
 		if (this.state === next) return;
 		this.state = next;
 		this.root.setAttribute("data-state", next);
-		setIcon(this.playPauseBtn, next === "playing" ? "pause" : "play");
+		// Leave the play/pause icon untouched while loading so a mid-note gap
+		// keeps the pause icon (the user is still conceptually playing).
+		if (next !== "loading")
+			setIcon(this.playPauseBtn, next === "playing" ? "pause" : "play");
 		if (next === "playing") this.startTick();
 		else this.stopTick();
 		if (next === "idle") this.updateProgress(0, 0);

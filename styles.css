@@ -56,33 +56,52 @@
 	--icon-size: 16px;
 }
 
-.tts-floating-player__loading {
+/* Loading indicator: a sound-wave equalizer that swaps in for the seek bar
+   while audio generates. Sized to the seek bar's footprint (see __progress
+   below and its mobile rule) so the player does not change width. */
+.tts-floating-player__equalizer {
 	display: none;
-	gap: 8px;
 	align-items: center;
-	color: var(--text-muted);
+	justify-content: space-between;
+	width: 120px;
+	height: 16px;
 }
 
-.tts-floating-player[data-state="loading"] .tts-floating-player__controls {
-	display: none;
-}
-
-.tts-floating-player[data-state="loading"] .tts-floating-player__loading {
+.tts-floating-player[data-state="loading"] .tts-floating-player__equalizer {
 	display: flex;
 }
 
-.tts-floating-player__spinner {
-	width: 14px;
-	height: 14px;
-	border: 2px solid var(--background-modifier-border);
-	border-top-color: var(--interactive-accent);
-	border-radius: 50%;
-	animation: tts-floating-player-spin 0.7s linear infinite;
+.tts-floating-player[data-state="loading"] .tts-floating-player__progress {
+	display: none;
 }
 
-@keyframes tts-floating-player-spin {
-	to {
-		transform: rotate(360deg);
+.tts-floating-player__equalizer span {
+	display: block;
+	width: 3px;
+	height: 100%;
+	background: var(--interactive-accent);
+	border-radius: 1px;
+	transform-origin: center;
+	animation: tts-floating-player-eq 1s ease-in-out infinite;
+}
+
+@keyframes tts-floating-player-eq {
+	0%,
+	100% {
+		transform: scaleY(0.3);
+	}
+	50% {
+		transform: scaleY(1);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tts-floating-player__equalizer span {
+		animation: none;
+		transform: scaleY(0.6);
+	}
+	.tts-floating-player__progress-fill {
+		transition: none;
 	}
 }
 

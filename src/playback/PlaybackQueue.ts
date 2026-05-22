@@ -30,6 +30,10 @@ export class PlaybackQueue {
 	private chunkResults = new Map<number, SynthResult[]>();
 	private cursor: { paragraphIdx: number; subChunkIdx: number } | null = null;
 	private state: QueueState = "idle";
+	// A pause requested while we are still synthesizing the next chunk. Consumed
+	// by playCurrent so the freshly loaded audio stays paused instead of
+	// auto-playing — the queue has no live audio to pause yet during "loading".
+	private pausePending = false;
 
 	constructor(
 		private readonly paragraphs: Paragraph[],
@@ -64,6 +68,7 @@ export class PlaybackQueue {
 		if (fromParagraphIdx < 0 || fromParagraphIdx >= this.paragraphs.length)
 			return;
 		this.cursor = { paragraphIdx: fromParagraphIdx, subChunkIdx: 0 };
+		this.pausePending = false;
 		this.setState("loading");
 		await this.playCurrent();
 		this.spawnPrefetchFrom(fromParagraphIdx + 1);
@@ -72,6 +77,8 @@ export class PlaybackQueue {
 	togglePause(): void {
 		if (this.state === "playing") this.pause();
 		else if (this.state === "paused") this.resume();
+		else if (this.state === "loading")
+			this.pausePending = !this.pausePending;
 	}
 
 	pause(): void {
@@ -92,17 +99,22 @@ export class PlaybackQueue {
 		this.prefetch.clear();
 		this.chunkResults.clear();
 		this.cursor = null;
+		this.pausePending = false;
 		this.player.stop();
 		this.setState("idle");
 	}
 
 	async skipNext(): Promise<void> {
 		if (!this.cursor) return;
+		// A skip is an explicit request to play different content, so it clears a
+		// pause queued during loading — matching how skipping while paused resumes.
+		this.pausePending = false;
 		await this.advance();
 	}
 
 	async skipPrevious(): Promise<void> {
 		if (!this.cursor) return;
+		this.pausePending = false;
 		if (this.cursor.subChunkIdx > 0) {
 			this.cursor.subChunkIdx -= 1;
 		} else if (this.cursor.paragraphIdx > 0) {
@@ -155,6 +167,14 @@ export class PlaybackQueue {
 		if (!this.cursor) return;
 		const { paragraphIdx, subChunkIdx } = this.cursor;
 		try {
+			// Surface the loading state whenever the target paragraph still needs
+			// synthesis. Without this, a mid-note advance to an un-prefetched
+			// paragraph leaves the broadcast state at "playing" while audio is
+			// silently generating. Sub-chunks of an already-synthesized paragraph
+			// are cached, so they skip the flash. This path is only reached when
+			// no audio is playing (initial play, or after the prior track ended),
+			// so there is no live progress lost by entering "loading".
+			if (!this.chunkResults.has(paragraphIdx)) this.setState("loading");
 			const chunks = await this.ensureChunksFor(paragraphIdx);
 			if (!this.cursor || this.cursor.paragraphIdx !== paragraphIdx)
 				return;
@@ -165,6 +185,11 @@ export class PlaybackQueue {
 			}
 			await this.player.load(chunk.audio, chunk.sentences);
 			this.options.onPositionChange?.(paragraphIdx, subChunkIdx);
+			if (this.pausePending) {
+				this.pausePending = false;
+				this.setState("paused");
+				return;
+			}
 			this.player.play();
 			this.setState("playing");
 		} catch (err) {
