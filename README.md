@@ -2,8 +2,7 @@
 
 > **⚠️ Draft README — skeleton only.** This file is structurally complete but is
 > not release-ready. Items that need the maintainer before v1.0 ship:
-> screenshots / a demo GIF, the confirmed Gemini API price, the OS Now Playing
-> section (gated on the Phase 0 `mediaSession` preflight), and a pass over every
+> screenshots / a demo GIF, the confirmed Gemini API price, and a pass over every
 > UX claim once Phases 3–7 have been manually verified. Search this file for
 > `TODO:` markers.
 
@@ -87,11 +86,20 @@ command. Multi-paragraph selections are trimmed to the selection bounds.
 
 ## OS Now Playing controls
 
-<!-- TODO: This section is gated on the Phase 0 `mediaSession` preflight, which
-     has not been run. As shipped, `MediaSessionBinding.ts` is a no-op stub, so
-     OS-level Now Playing controls (macOS Now Playing, Windows SMTC, Linux
-     MPRIS) are NOT wired up yet. Either complete Phase 0 + the Phase 8 binding
-     and document what works per-OS here, or remove this section. -->
+While a note is playing, Hark registers with the operating system's media
+controls. The current note's title appears as the track, with "Hark" as the
+artist, and you can play, pause, stop, and skip to the previous or next
+paragraph from the OS — including hardware media keys and lock-screen or
+menu-bar widgets, without Obsidian in focus.
+
+This is verified on **macOS** (the Now Playing widget in Control Center and the
+menu bar). It is expected to work on **Windows** (System Media Transport
+Controls) and **Linux** (MPRIS) too, since all three use the same Chromium
+media-session layer, but those have not been tested directly. **Android is not
+supported** (see Known limitations).
+
+One quirk: pressing skip-previous or skip-next while paused resumes playback,
+matching how most media apps behave.
 
 ## Privacy & data flow
 
