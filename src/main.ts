@@ -20,6 +20,11 @@ import { Cache } from "./tts/Cache";
 import { Synthesizer } from "./tts/Synthesizer";
 import { Player } from "./playback/Player";
 import { PlaybackQueue, QueueState } from "./playback/PlaybackQueue";
+import {
+	attachMediaSession,
+	setNowPlaying,
+	setPlaybackState,
+} from "./playback/MediaSessionBinding";
 import { MAX_RATE, MIN_RATE, SPEED_OPTIONS } from "./playback/rate";
 import { registerCommands } from "./commands";
 import { StatusBar } from "./ui/StatusBar";
@@ -125,6 +130,18 @@ export default class HarkPlugin extends Plugin {
 			}),
 		);
 
+		const detachMediaSession = attachMediaSession({
+			togglePause: () => this.playbackQueue?.togglePause(),
+			stop: () => this.playbackQueue?.stop(),
+			skipNext: () => {
+				void this.playbackQueue?.skipNext();
+			},
+			skipPrevious: () => {
+				void this.playbackQueue?.skipPrevious();
+			},
+		});
+		this.register(detachMediaSession);
+
 		registerCommands(this);
 	}
 
@@ -212,6 +229,10 @@ export default class HarkPlugin extends Plugin {
 			return;
 		}
 		this.playbackQueue?.stop();
+		setNowPlaying({
+			title: this.app.workspace.getActiveFile()?.basename ?? "Untitled",
+			artist: "Hark",
+		});
 		this.floatingPlayer?.setParagraphIndex(0, paragraphs.length);
 		this.floatingPlayer?.setRate(this.settings.playbackRate);
 		this.playbackQueue = new PlaybackQueue(paragraphs, voiceId, this.synthesizer, this.player, {
@@ -240,6 +261,10 @@ export default class HarkPlugin extends Plugin {
 		const ui = queueStateToUi(state);
 		this.statusBar?.setState(ui);
 		this.floatingPlayer?.setState(ui);
+		// Treat `loading` as `playing` so the OS Now Playing widget appears
+		// immediately on the first press instead of flickering through `none`.
+		setPlaybackState(state === "playing" || state === "loading" ? "playing" : state === "paused" ? "paused" : "none");
+		if (state === "idle" || state === "ended") setNowPlaying(null);
 	}
 
 }
