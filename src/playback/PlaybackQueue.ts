@@ -120,9 +120,10 @@ export class PlaybackQueue {
 		} else if (this.cursor.paragraphIdx > 0) {
 			this.cursor.paragraphIdx -= 1;
 			this.cursor.subChunkIdx = 0;
-		} else {
-			return;
 		}
+		// At the very start of the document there is no earlier section, so the
+		// cursor is left as-is and playCurrent replays the current section from
+		// its beginning rather than doing nothing.
 		await this.playCurrent();
 	}
 
