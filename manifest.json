@@ -5,6 +5,6 @@
 	"minAppVersion": "1.11.4",
 	"description": "Read any note aloud with a synchronised sentence highlight. Audio caches locally for instant replays.",
 	"author": "kyrisu",
-	"authorUrl": "",
+	"authorUrl": "https://github.com/kyrisu",
 	"isDesktopOnly": false
 }

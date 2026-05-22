@@ -133,7 +133,3 @@ command.
 ## License
 
 [0-BSD](LICENSE).
-
-<!-- TODO: the LICENSE file still carries the sample plugin's
-     "Copyright (C) 2020-2025 by Dynalist Inc." line — update the copyright
-     holder before release. -->
