@@ -1,18 +1,11 @@
 # Hark
 
-> **⚠️ Draft README — skeleton only.** This file is structurally complete but is
-> not release-ready. Items that need the maintainer before v1.0 ship:
-> screenshots / a demo GIF, the confirmed Gemini API price, and a pass over every
-> UX claim once Phases 3–7 have been manually verified. Search this file for
-> `TODO:` markers.
-
 Read your markdown notes aloud in Obsidian using Google's **Gemini 2.5
 Flash TTS**. The currently-spoken sentence is highlighted in Live Preview and
 Source mode as playback advances. Audio is cached locally, so re-listening to a
 note costs nothing.
 
-<!-- TODO: add one screenshot or GIF showing the floating mini-player and the
-     sentence highlight in Live Preview. -->
+![Hark reading a note: the floating mini-player and a synchronised sentence highlight in Live Preview](docs/demo.gif)
 
 ## Requirements
 
@@ -29,8 +22,9 @@ The key is stored in Obsidian's `SecretStorage` rather than in the plugin's
 `data.json`. The plugin calls the Gemini Developer API at
 `generativelanguage.googleapis.com`.
 
-<!-- TODO: add screenshots of the AI Studio "Get API key" page and the plugin
-     settings credential field. -->
+![Creating a Gemini API key in Google AI Studio](docs/api-key.png)
+
+![The Hark settings tab with a validated API key](docs/settings.png)
 
 ## Cost
 
@@ -62,20 +56,20 @@ Until the plugin is in the community catalogue, install it from a local build:
 Open a markdown note, then either click the **Read aloud from cursor** ribbon
 icon (the audio-file icon in the left ribbon) or run one of the commands below from
 the command palette. A draggable floating mini-player appears with play/pause,
-stop, previous/next paragraph, a speed selector, and a seek bar; the status bar
+stop, previous/next section, a speed selector, and a seek bar; the status bar
 also shows playback state.
 
 Commands (no default hotkeys — assign your own under **Settings → Hotkeys**):
 
 | Command | What it does |
 | --- | --- |
-| Read note aloud from cursor | Starts at the paragraph the cursor is in |
+| Read note aloud from cursor | Starts at the section the cursor is in |
 | Read note aloud from beginning | Starts at the top of the note |
 | Read selection aloud | Reads only the selected text (also on the right-click menu) |
 | Pause or resume reading | Toggles playback |
 | Stop reading | Stops and clears the highlight |
-| Skip to next paragraph | Jumps forward one paragraph |
-| Go back one paragraph | Jumps back one paragraph |
+| Skip to next section | Jumps forward one section |
+| Go back one section | Jumps back one section |
 | Increase reading speed | +0.25× (range 0.5×–2.0×) |
 | Decrease reading speed | −0.25× |
 | Clear cache | Deletes all cached audio |
@@ -84,16 +78,12 @@ To read part of a note, select the text (a selection may span multiple
 paragraphs), then right-click and choose **Read selection aloud** or run the
 command. Multi-paragraph selections are trimmed to the selection bounds.
 
-<!-- TODO: re-verify every command name, the ribbon tooltip, and the
-     floating-player controls against the running plugin after manual
-     verification of Phases 3–7. -->
-
 ## OS Now Playing controls
 
 While a note is playing, Hark registers with the operating system's media
 controls. The current note's title appears as the track, with "Hark" as the
 artist, and you can play, pause, stop, and skip to the previous or next
-paragraph from the OS — including hardware media keys and lock-screen or
+section from the OS — including hardware media keys and lock-screen or
 menu-bar widgets, without Obsidian in focus.
 
 This is verified on **macOS** (the Now Playing widget in Control Center and the
