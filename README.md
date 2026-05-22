@@ -38,10 +38,14 @@ Synthesis is billed by the Gemini Developer API for the
 `gemini-2.5-flash-preview-tts` model. Once a paragraph is synthesised it is
 cached locally, so replays of the same note and voice are free.
 
-<!-- TODO: quote the current Gemini Developer API TTS rate from
-     https://ai.google.dev/pricing and give a worked example (e.g. cost of a
-     1,000-word note). Do NOT reuse the old Cloud-TTS "$15 / 1M chars" figure —
-     that was a different product. -->
+As of May 2026, the paid tier bills this model at **$0.50 per 1M input text
+tokens** and **$10 per 1M output audio tokens**; a free tier is also available
+for development. The output audio tokens dominate the bill in practice, and
+reading a typical note works out to roughly a fraction of a cent up to a couple
+of cents. Re-listening costs nothing because the audio is served from the local
+cache. These figures change over time — check
+[Google's pricing page](https://ai.google.dev/pricing) for the current rates
+before relying on them.
 
 ## Installation
 
@@ -55,8 +59,8 @@ Until the plugin is in the community catalogue, install it from a local build:
 
 ## Usage
 
-Open a markdown note, then either click the **Read note aloud** ribbon icon
-(the audio-file icon in the left ribbon) or run one of the commands below from
+Open a markdown note, then either click the **Read aloud from cursor** ribbon
+icon (the audio-file icon in the left ribbon) or run one of the commands below from
 the command palette. A draggable floating mini-player appears with play/pause,
 stop, previous/next paragraph, a speed selector, and a seek bar; the status bar
 also shows playback state.
