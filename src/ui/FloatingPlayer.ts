@@ -1,4 +1,4 @@
-import { setIcon } from "obsidian";
+import { Platform, setIcon } from "obsidian";
 import type { PlaybackUiState } from "../types";
 import { clamp } from "../utils/math";
 
@@ -31,7 +31,12 @@ export class FloatingPlayer {
 	private readonly speedSelect: HTMLSelectElement;
 	private state: PlaybackUiState = "idle";
 	private tickHandle: number | null = null;
-	private drag: { offsetX: number; offsetY: number; width: number; height: number } | null = null;
+	private drag: {
+		offsetX: number;
+		offsetY: number;
+		width: number;
+		height: number;
+	} | null = null;
 	private lastProgressWidth = -1;
 	private lastTimeLabel = "";
 
@@ -39,31 +44,44 @@ export class FloatingPlayer {
 		this.root = document.createElement("div");
 		this.root.addClass("tts-floating-player");
 		this.root.setAttribute("data-state", "idle");
+		if (Platform.isMobile) this.root.addClass("is-mobile");
 
 		this.handle = this.root.createEl("div", {
 			cls: "tts-floating-player__drag",
 			text: "⠿",
 			attr: { title: "Drag to move" },
 		});
-		this.handle.addEventListener("mousedown", this.handleDragStart);
+		if (!Platform.isMobile)
+			this.handle.addEventListener("mousedown", this.handleDragStart);
 
-		const controls = this.root.createEl("div", { cls: "tts-floating-player__controls" });
+		const controls = this.root.createEl("div", {
+			cls: "tts-floating-player__controls",
+		});
 
 		this.makeButton(controls, "skip-back", "Previous section", () =>
 			this.options.onSkipPrevious(),
 		);
-		this.playPauseBtn = this.makeButton(controls, "play", "Play / pause", () =>
-			this.options.onPlayPause(),
+		this.playPauseBtn = this.makeButton(
+			controls,
+			"play",
+			"Play / pause",
+			() => this.options.onPlayPause(),
 		);
-		this.makeButton(controls, "skip-forward", "Next section", () => this.options.onSkipNext());
-		this.makeButton(controls, "square", "Stop", () => this.options.onStop());
+		this.makeButton(controls, "skip-forward", "Next section", () =>
+			this.options.onSkipNext(),
+		);
+		this.makeButton(controls, "square", "Stop", () =>
+			this.options.onStop(),
+		);
 
 		this.paraIndicator = controls.createEl("span", {
 			cls: "tts-floating-player__paragraph",
 			text: "—",
 		});
 
-		this.progressTrack = controls.createEl("div", { cls: "tts-floating-player__progress" });
+		this.progressTrack = controls.createEl("div", {
+			cls: "tts-floating-player__progress",
+		});
 		this.progressFill = this.progressTrack.createEl("div", {
 			cls: "tts-floating-player__progress-fill",
 		});
@@ -90,18 +108,29 @@ export class FloatingPlayer {
 			text: "00:00 / 00:00",
 		});
 
-		this.speedSelect = controls.createEl("select", { cls: "tts-floating-player__speed" });
+		this.speedSelect = controls.createEl("select", {
+			cls: "tts-floating-player__speed",
+		});
 		for (const s of options.speeds) {
-			this.speedSelect.createEl("option", { value: String(s), text: `${s}×` });
+			this.speedSelect.createEl("option", {
+				value: String(s),
+				text: `${s}×`,
+			});
 		}
-		this.speedSelect.value = nearestSpeed(options.speeds, options.initialRate);
+		this.speedSelect.value = nearestSpeed(
+			options.speeds,
+			options.initialRate,
+		);
 		this.speedSelect.addEventListener("change", () => {
 			const rate = Number(this.speedSelect.value);
 			if (Number.isFinite(rate)) this.options.onSpeedChange(rate);
 		});
 
 		document.body.appendChild(this.root);
-		this.applyInitialPosition(options.initialPosition);
+		// On mobile the player is full-width docked above the navbar via CSS, so
+		// the desktop pixel placement and drag-to-move are skipped entirely.
+		if (!Platform.isMobile)
+			this.applyInitialPosition(options.initialPosition);
 	}
 
 	setState(next: PlaybackUiState): void {
@@ -118,7 +147,8 @@ export class FloatingPlayer {
 	}
 
 	setParagraphIndex(idx: number, total: number): void {
-		this.paraIndicator.textContent = total <= 0 ? "—" : `${idx + 1} / ${total}`;
+		this.paraIndicator.textContent =
+			total <= 0 ? "—" : `${idx + 1} / ${total}`;
 	}
 
 	setRate(rate: number): void {
@@ -189,8 +219,16 @@ export class FloatingPlayer {
 	private handleDragMove = (event: MouseEvent): void => {
 		const d = this.drag;
 		if (!d) return;
-		const x = clamp(event.clientX - d.offsetX, MARGIN, window.innerWidth - d.width - MARGIN);
-		const y = clamp(event.clientY - d.offsetY, MARGIN, window.innerHeight - d.height - MARGIN);
+		const x = clamp(
+			event.clientX - d.offsetX,
+			MARGIN,
+			window.innerWidth - d.width - MARGIN,
+		);
+		const y = clamp(
+			event.clientY - d.offsetY,
+			MARGIN,
+			window.innerHeight - d.height - MARGIN,
+		);
 		this.root.style.left = `${x}px`;
 		this.root.style.top = `${y}px`;
 	};
@@ -218,7 +256,10 @@ export class FloatingPlayer {
 	private startTick(): void {
 		this.stopTick();
 		this.tickHandle = window.setInterval(() => {
-			this.updateProgress(this.options.getCurrentTime(), this.options.getDuration());
+			this.updateProgress(
+				this.options.getCurrentTime(),
+				this.options.getDuration(),
+			);
 		}, TICK_MS);
 	}
 

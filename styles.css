@@ -179,9 +179,14 @@
 	justify-content: center;
 }
 
-.tts-floating-player.is-mobile .tts-floating-player__progress {
+.tts-floating-player.is-mobile .tts-floating-player__progress,
+.tts-floating-player.is-mobile .tts-floating-player__equalizer {
 	flex: 1 1 auto;
 	min-width: 40px;
+}
+
+.tts-floating-player.is-mobile .tts-floating-player__equalizer {
+	width: auto;
 }
 
 .tts-status-bar {
